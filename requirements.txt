@@ -1,0 +1,35 @@
+# AI Judge System Requirements
+# Python 3.10+ required (建议使用 Python 3.11+)
+
+# AutoGen Framework (最新版本)
+# 参考: https://microsoft.github.io/autogen/stable/
+autogen-agentchat>=0.4.0
+autogen-ext[openai]>=0.4.0
+autogen-core>=0.4.0
+
+# Web Framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.9.0
+pydantic-settings>=2.6.0
+
+# Database
+sqlalchemy>=2.0.35
+alembic>=1.13.0
+aiosqlite>=0.20.0
+greenlet>=3.0.0  # Required for SQLAlchemy async
+
+# Image Processing
+Pillow>=10.4.0
+requests>=2.32.0
+
+# Utilities
+python-dotenv>=1.0.0
+python-multipart>=0.0.12
+
+# Logging & Monitoring
+loguru>=0.7.2
+
+# OpenAI (for models)
+openai>=1.0.0
+
