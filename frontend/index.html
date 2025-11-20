@@ -357,6 +357,133 @@
             background: #2196F3;
             color: white;
         }
+
+        /* 高级设置样式 */
+        .advanced-settings {
+            margin: 20px 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .toggle-advanced {
+            width: 100%;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .toggle-advanced:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+
+        #advancedArrow {
+            transition: transform 0.3s;
+            font-size: 14px;
+        }
+
+        #advancedArrow.rotated {
+            transform: rotate(180deg);
+        }
+
+        .advanced-content {
+            padding: 20px;
+            background: #f9f9f9;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .judges-config {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .judge-config-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .judge-config-item label {
+            display: block;
+            margin-bottom: 8px;
+            color: #667eea;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .judge-config-item textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .btn-reset {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+
+        .btn-reset:hover {
+            background: #d32f2f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
+        }
+
+        .btn-load-default, .btn-load-default-small {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+            transition: all 0.2s;
+        }
+
+        .btn-load-default-small {
+            padding: 4px 8px;
+            font-size: 11px;
+            float: right;
+        }
+
+        .btn-load-default:hover, .btn-load-default-small:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -364,6 +491,19 @@
         <div class="header">
             <h1>🎭 AI 评委评分系统</h1>
             <p>多个 AI 评委为你的作品打分并展开热烈讨论</p>
+            <div style="margin-top: 15px;">
+                <a href="/config.html" target="_blank" style="
+                    display: inline-block;
+                    padding: 8px 16px;
+                    background: #667eea;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    transition: background 0.3s;
+                    margin-right: 10px;
+                " onmouseover="this.style.background='#5568d3'" onmouseout="this.style.background='#667eea'">⚙️ 查看系统配置</a>
+            </div>
         </div>
 
         <div class="main-card">
@@ -411,6 +551,101 @@
                               placeholder="例如：日常通勤穿搭，适合秋季..."></textarea>
                 </div>
 
+                <!-- 高级设置面板 -->
+                <div class="advanced-settings">
+                    <button type="button" class="toggle-advanced" onclick="toggleAdvanced()">
+                        ⚙️ 高级设置（自定义评委提示词）<span id="advancedArrow">▼</span>
+                    </button>
+                    
+                    <div class="advanced-content" id="advancedContent" style="display: none;">
+                        <div class="alert-info">
+                            💡 <strong>提示：</strong>留空则使用系统默认配置。自定义后将覆盖默认评委行为。
+                        </div>
+
+                        <div class="form-group">
+                            <label for="customScoringGuide">
+                                评分规范（可选）
+                                <button type="button" class="btn-load-default" onclick="loadDefaultToField('customScoringGuide')">
+                                    📋 查看/加载默认值
+                                </button>
+                            </label>
+                            <textarea id="customScoringGuide" rows="5"
+                                      placeholder="加载中..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>评委人设（可选）</label>
+                            <div class="judges-config">
+                                <div class="judge-config-item">
+                                    <label for="persona_chatgpt5">
+                                        ChatGPT-5 评委
+                                        <button type="button" class="btn-load-default-small" onclick="loadDefaultToField('persona_chatgpt5')">
+                                            📋 加载默认
+                                        </button>
+                                    </label>
+                                    <textarea id="persona_chatgpt5" rows="3"
+                                              placeholder="加载中..."></textarea>
+                                </div>
+                                <div class="judge-config-item">
+                                    <label for="persona_grok">
+                                        Grok 评委
+                                        <button type="button" class="btn-load-default-small" onclick="loadDefaultToField('persona_grok')">
+                                            📋 加载默认
+                                        </button>
+                                    </label>
+                                    <textarea id="persona_grok" rows="3"
+                                              placeholder="加载中..."></textarea>
+                                </div>
+                                <div class="judge-config-item">
+                                    <label for="persona_gemini">
+                                        Gemini 2.5 评委
+                                        <button type="button" class="btn-load-default-small" onclick="loadDefaultToField('persona_gemini')">
+                                            📋 加载默认
+                                        </button>
+                                    </label>
+                                    <textarea id="persona_gemini" rows="3"
+                                              placeholder="加载中..."></textarea>
+                                </div>
+                                <div class="judge-config-item">
+                                    <label for="persona_doubao">
+                                        豆包评委
+                                        <button type="button" class="btn-load-default-small" onclick="loadDefaultToField('persona_doubao')">
+                                            📋 加载默认
+                                        </button>
+                                    </label>
+                                    <textarea id="persona_doubao" rows="3"
+                                              placeholder="加载中..."></textarea>
+                                </div>
+                                <div class="judge-config-item">
+                                    <label for="persona_qwen">
+                                        千问评委
+                                        <button type="button" class="btn-load-default-small" onclick="loadDefaultToField('persona_qwen')">
+                                            📋 加载默认
+                                        </button>
+                                    </label>
+                                    <textarea id="persona_qwen" rows="3"
+                                              placeholder="加载中..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="customDebateInstruction">
+                                讨论模式说明（可选）
+                                <button type="button" class="btn-load-default" onclick="loadDefaultToField('customDebateInstruction')">
+                                    📋 查看/加载默认值
+                                </button>
+                            </label>
+                            <textarea id="customDebateInstruction" rows="5"
+                                      placeholder="加载中..."></textarea>
+                        </div>
+
+                        <button type="button" class="btn-reset" onclick="resetAdvanced()">
+                            🔄 重置为默认配置
+                        </button>
+                    </div>
+                </div>
+
                 <button type="submit" class="btn-submit">🚀 开始评分</button>
             </form>
 
@@ -430,6 +665,19 @@
             <div class="result-header">
                 <h2>🏆 评分结果</h2>
                 <p>作品 ID: <span id="resultEntryId"></span></p>
+                <a id="debugLink" href="#" target="_blank" style="
+                    display: inline-block;
+                    margin-top: 10px;
+                    padding: 10px 20px;
+                    background: #667eea;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    transition: background 0.3s;
+                ">
+                    🔍 查看调试详情
+                </a>
             </div>
 
             <div class="main-card">
@@ -446,6 +694,69 @@
 
     <script>
         const API_BASE_URL = 'http://localhost:8000/api';
+
+        // 页面加载时获取并填充默认配置
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadDefaultPrompts();
+        });
+
+        // 加载默认提示词配置
+        async function loadDefaultPrompts() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/default_prompts`);
+                if (!response.ok) {
+                    console.error('无法加载默认配置');
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                // 填充评分规范
+                if (data.scoring_guide) {
+                    document.getElementById('customScoringGuide').value = data.scoring_guide;
+                    document.getElementById('customScoringGuide').dataset.default = data.scoring_guide;
+                }
+                
+                // 填充评委人设
+                if (data.judge_personas) {
+                    if (data.judge_personas.chatgpt5_judge) {
+                        const persona = data.judge_personas.chatgpt5_judge.persona;
+                        document.getElementById('persona_chatgpt5').value = persona;
+                        document.getElementById('persona_chatgpt5').dataset.default = persona;
+                    }
+                    if (data.judge_personas.grok_judge) {
+                        const persona = data.judge_personas.grok_judge.persona;
+                        document.getElementById('persona_grok').value = persona;
+                        document.getElementById('persona_grok').dataset.default = persona;
+                    }
+                    if (data.judge_personas.gemini_judge) {
+                        const persona = data.judge_personas.gemini_judge.persona;
+                        document.getElementById('persona_gemini').value = persona;
+                        document.getElementById('persona_gemini').dataset.default = persona;
+                    }
+                    if (data.judge_personas.doubao_judge) {
+                        const persona = data.judge_personas.doubao_judge.persona;
+                        document.getElementById('persona_doubao').value = persona;
+                        document.getElementById('persona_doubao').dataset.default = persona;
+                    }
+                    if (data.judge_personas.qwen_judge) {
+                        const persona = data.judge_personas.qwen_judge.persona;
+                        document.getElementById('persona_qwen').value = persona;
+                        document.getElementById('persona_qwen').dataset.default = persona;
+                    }
+                }
+                
+                // 填充讨论模式说明
+                if (data.debate_instruction) {
+                    document.getElementById('customDebateInstruction').value = data.debate_instruction;
+                    document.getElementById('customDebateInstruction').dataset.default = data.debate_instruction;
+                }
+                
+                console.log('✅ 默认配置加载成功');
+            } catch (error) {
+                console.error('加载默认配置失败:', error);
+            }
+        }
 
         document.getElementById('judgeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -465,6 +776,12 @@
                 competition_type: document.getElementById('competitionType').value,
                 extra_text: document.getElementById('extraText').value || null
             };
+
+            // 获取自定义提示词配置
+            const customPrompts = getCustomPrompts();
+            if (customPrompts) {
+                formData.custom_prompts = customPrompts;
+            }
 
             try {
                 const response = await fetch(`${API_BASE_URL}/judge_entry`, {
@@ -496,6 +813,9 @@
         function displayResults(data) {
             // 显示作品 ID
             document.getElementById('resultEntryId').textContent = data.entry_id;
+            
+            // 设置调试链接
+            document.getElementById('debugLink').href = `/debug.html?entry_id=${data.entry_id}`;
 
             // 显示评委评分（使用排序后的结果）
             const judgesGrid = document.getElementById('judgesGrid');
@@ -564,6 +884,108 @@
             
             // 滚动到结果区域
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 切换高级设置面板
+        function toggleAdvanced() {
+            const content = document.getElementById('advancedContent');
+            const arrow = document.getElementById('advancedArrow');
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                arrow.classList.add('rotated');
+            } else {
+                content.style.display = 'none';
+                arrow.classList.remove('rotated');
+            }
+        }
+
+        // 重置高级设置 - 恢复到默认值
+        function resetAdvanced() {
+            if (confirm('确定要恢复所有字段的默认配置吗？')) {
+                loadDefaultToField('customScoringGuide');
+                loadDefaultToField('persona_chatgpt5');
+                loadDefaultToField('persona_grok');
+                loadDefaultToField('persona_gemini');
+                loadDefaultToField('persona_doubao');
+                loadDefaultToField('persona_qwen');
+                loadDefaultToField('customDebateInstruction');
+                alert('✅ 已恢复为默认配置');
+            }
+        }
+
+        // 加载默认值到指定字段
+        function loadDefaultToField(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (field && field.dataset.default) {
+                field.value = field.dataset.default;
+            }
+        }
+
+        // 获取自定义提示词配置
+        function getCustomPrompts() {
+            const scoringGuide = document.getElementById('customScoringGuide').value.trim();
+            const debateInstruction = document.getElementById('customDebateInstruction').value.trim();
+            
+            // 获取评委人设
+            const personaChatgpt5 = document.getElementById('persona_chatgpt5').value.trim();
+            const personaGrok = document.getElementById('persona_grok').value.trim();
+            const personaGemini = document.getElementById('persona_gemini').value.trim();
+            const personaDoubao = document.getElementById('persona_doubao').value.trim();
+            const personaQwen = document.getElementById('persona_qwen').value.trim();
+            
+            // 构建评委人设对象
+            const judgePersonas = {};
+            let hasPersonas = false;
+            
+            if (personaChatgpt5) {
+                judgePersonas.chatgpt5_judge = {
+                    display_name: "ChatGPT-5 评委",
+                    persona: personaChatgpt5
+                };
+                hasPersonas = true;
+            }
+            if (personaGrok) {
+                judgePersonas.grok_judge = {
+                    display_name: "Grok 评委",
+                    persona: personaGrok
+                };
+                hasPersonas = true;
+            }
+            if (personaGemini) {
+                judgePersonas.gemini_judge = {
+                    display_name: "Gemini 2.5 评委",
+                    persona: personaGemini
+                };
+                hasPersonas = true;
+            }
+            if (personaDoubao) {
+                judgePersonas.doubao_judge = {
+                    display_name: "豆包评委",
+                    persona: personaDoubao
+                };
+                hasPersonas = true;
+            }
+            if (personaQwen) {
+                judgePersonas.qwen_judge = {
+                    display_name: "千问评委",
+                    persona: personaQwen
+                };
+                hasPersonas = true;
+            }
+            
+            // 如果没有任何自定义配置，返回 null
+            if (!scoringGuide && !hasPersonas && !debateInstruction) {
+                return null;
+            }
+            
+            // 构建完整的自定义配置对象
+            const customPrompts = {};
+            if (scoringGuide) customPrompts.scoring_guide = scoringGuide;
+            if (hasPersonas) customPrompts.judge_personas = judgePersonas;
+            if (debateInstruction) customPrompts.debate_instruction = debateInstruction;
+            
+            return customPrompts;
         }
     </script>
 </body>

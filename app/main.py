@@ -81,6 +81,22 @@ if frontend_path.exists():
             "api_prefix": "/api",
             "frontend": "/static/index.html"
         }
+    
+    @app.get("/debug.html")
+    async def debug_page():
+        """调试页面"""
+        debug_file = frontend_path / "debug.html"
+        if debug_file.exists():
+            return FileResponse(str(debug_file))
+        return {"error": "调试页面不存在"}
+    
+    @app.get("/config.html")
+    async def config_page():
+        """配置检查页面"""
+        config_file = frontend_path / "config.html"
+        if config_file.exists():
+            return FileResponse(str(config_file))
+        return {"error": "配置页面不存在"}
 else:
     @app.get("/")
     async def root():

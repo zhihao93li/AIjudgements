@@ -11,26 +11,47 @@ from autogen_agentchat.messages import MultiModalMessage, TextMessage
 from autogen_core import Image as AGImage
 from loguru import logger
 
-from app.judges.prompts import COMMON_SCORING_GUIDE, JUDGE_PERSONAS
-from app.judges.utils import make_vision_client, get_model_for_judge, parse_json_from_response
+from app.judges.prompts import COMMON_SCORING_GUIDE, JUDGE_PERSONAS, parse_judge_response
+from app.judges.utils import make_vision_client, get_model_for_judge
 
 
-def build_vision_judges() -> list[AssistantAgent]:
+def build_vision_judges(
+    custom_scoring_guide: Optional[str] = None,
+    custom_personas: Optional[dict] = None
+) -> tuple[list[AssistantAgent], dict]:
     """
     构建所有评委 Agent（阶段一：评分模式）
     
+    Args:
+        custom_scoring_guide: 自定义评分规范
+        custom_personas: 自定义评委人设
+    
     Returns:
-        评委 Agent 列表
+        (评委 Agent 列表, 调试上下文字典)
     """
     judges = []
+    debug_contexts = {}  # 保存每个评委的调试信息
     
-    for judge_id, persona_info in JUDGE_PERSONAS.items():
+    # 使用自定义或默认的评分规范
+    scoring_guide = custom_scoring_guide or COMMON_SCORING_GUIDE
+    personas = custom_personas or JUDGE_PERSONAS
+    
+    for judge_id, persona_info in personas.items():
         model_name = get_model_for_judge(judge_id)
-        display_name = persona_info["display_name"]
-        persona = persona_info["persona"]
+        display_name = persona_info.get("display_name", judge_id)
+        persona = persona_info.get("persona", "")
         
         # 构建完整的 system message
-        system_message = COMMON_SCORING_GUIDE + persona
+        system_message = scoring_guide + persona
+        
+        # 保存调试上下文
+        debug_contexts[judge_id] = {
+            "model_name": model_name,
+            "display_name": display_name,
+            "system_message": system_message,
+            "persona": persona,
+            "scoring_guide": scoring_guide,
+        }
         
         try:
             model_client = make_vision_client(model=model_name, family="openai")
@@ -42,13 +63,19 @@ def build_vision_judges() -> list[AssistantAgent]:
             )
             
             judges.append(judge)
-            logger.info(f"创建评委成功: {judge_id} ({display_name}) - 模型: {model_name}")
+            
+            logger.info("="*80)
+            logger.info(f"[阶段一] 创建评委: {judge_id} ({display_name})")
+            logger.info(f"模型: {model_name}")
+            logger.debug(f"System Message 长度: {len(system_message)} 字符")
+            # logger.debug(f"System Message:\n{system_message[:500]}...")  # 只显示前500字符
+            logger.info("="*80)
             
         except Exception as e:
             logger.error(f"创建评委失败: {judge_id} - {e}")
             continue
     
-    return judges
+    return judges, debug_contexts
 
 
 def build_multimodal_message(
@@ -103,6 +130,8 @@ async def score_image_with_all_judges(
     entry_id: str,
     competition_type: str = "outfit",
     extra_text: Optional[str] = None,
+    custom_scoring_guide: Optional[str] = None,
+    custom_personas: Optional[dict] = None,
 ) -> dict:
     """
     阶段一主函数：所有评委并发看图评分
@@ -137,7 +166,10 @@ async def score_image_with_all_judges(
         }
     
     # 2. 构建评委团队
-    judges = build_vision_judges()
+    judges, debug_contexts = build_vision_judges(
+        custom_scoring_guide=custom_scoring_guide,
+        custom_personas=custom_personas
+    )
     
     if not judges:
         logger.error("没有可用的评委")
@@ -148,6 +180,9 @@ async def score_image_with_all_judges(
             "judge_results": [],
             "sorted_results": [],
         }
+    
+    # 保存用户指令内容（用于调试）
+    user_instruction = mm_msg.content[0] if isinstance(mm_msg.content, list) else str(mm_msg.content)
     
     # 3. 并发调用所有评委
     logger.info(f"开始并发调用 {len(judges)} 个评委...")
@@ -178,8 +213,13 @@ async def score_image_with_all_judges(
             response = result.chat_message
             raw_content = response.content if isinstance(response.content, str) else str(response.content)
             
+            logger.info("="*80)
+            logger.info(f"[阶段一] 评委 {judge.name} 原始输出:")
+            logger.info(f"{raw_content}")
+            logger.info("="*80)
+            
             # 解析 JSON
-            data = parse_json_from_response(raw_content)
+            data = parse_judge_response(raw_content)
             
             if data and "overall_score" in data:
                 # 确保必要字段存在
@@ -187,6 +227,17 @@ async def score_image_with_all_judges(
                 data["judge_display_name"] = judge_display_name
                 data["competition_type"] = competition_type
                 data["raw_output"] = raw_content
+                
+                # 添加调试信息
+                if judge.name in debug_contexts:
+                    ctx = debug_contexts[judge.name]
+                    data["system_message"] = ctx["system_message"]
+                    data["user_instruction"] = user_instruction
+                    data["model_name"] = ctx["model_name"]
+                    data["debug_context"] = {
+                        "persona": ctx["persona"],
+                        "scoring_guide": ctx["scoring_guide"],
+                    }
                 
                 judge_outputs.append(data)
                 logger.success(f"评委 {judge.name} 评分成功: {data.get('overall_score')}")

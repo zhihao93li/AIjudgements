@@ -62,6 +62,11 @@ async def save_judge_results(
             comment_for_audience=judge_data.get("comment_for_audience"),
             safety_notes=judge_data.get("safety_notes"),
             raw_output=judge_data.get("raw_output"),
+            # 新增调试字段
+            system_message=judge_data.get("system_message"),
+            user_instruction=judge_data.get("user_instruction"),
+            model_name=judge_data.get("model_name"),
+            debug_context=judge_data.get("debug_context"),
         )
         db.add(result)
         results.append(result)
@@ -77,6 +82,9 @@ async def save_debate_session(
     participants: List[str],
     messages: List[dict],
     config: Optional[dict] = None,
+    judge_contexts: Optional[dict] = None,
+    selector_prompt: Optional[str] = None,
+    initial_message: Optional[str] = None,
 ) -> DebateSession:
     """保存群聊讨论会话"""
     # 检查是否已存在，如果存在则先删除旧的
@@ -97,6 +105,9 @@ async def save_debate_session(
         entry_id=entry_id,
         participants=participants,
         config=config or {},
+        judge_contexts=judge_contexts,
+        selector_prompt=selector_prompt,
+        initial_message=initial_message,
     )
     db.add(session)
     
@@ -107,6 +118,9 @@ async def save_debate_session(
             sequence=idx + 1,
             speaker=msg_data.get("speaker", ""),
             content=msg_data.get("content", ""),
+            context_history=msg_data.get("context_history"),
+            raw_response=msg_data.get("raw_response"),
+            model_name=msg_data.get("model_name"),
         )
         db.add(message)
     

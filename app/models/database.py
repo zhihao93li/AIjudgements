@@ -45,6 +45,10 @@ class JudgeResult(Base):
     
     # 调试信息
     raw_output = Column(Text, nullable=True)
+    system_message = Column(Text, nullable=True)  # 评委收到的系统消息（评分规范+人设）
+    user_instruction = Column(Text, nullable=True)  # 用户指令内容
+    model_name = Column(String(100), nullable=True)  # 使用的模型名称
+    debug_context = Column(JSON, nullable=True)  # 其他调试上下文信息
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # 关联关系
@@ -59,6 +63,12 @@ class DebateSession(Base):
     entry_id = Column(String(100), ForeignKey("entries.entry_id"), nullable=False, index=True)
     participants = Column(JSON, nullable=False)  # ["chatgpt5_judge", "grok_judge", ...]
     config = Column(JSON, nullable=True)  # {"max_messages": 12, "selector_model": "gpt-4o-mini"}
+    
+    # 调试信息
+    judge_contexts = Column(JSON, nullable=True)  # 每个评委的上下文信息（system_message等）
+    selector_prompt = Column(Text, nullable=True)  # 选择器的提示词
+    initial_message = Column(Text, nullable=True)  # 初始消息内容
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # 关联关系
@@ -75,6 +85,12 @@ class DebateMessage(Base):
     sequence = Column(Integer, nullable=False)  # 消息顺序
     speaker = Column(String(50), nullable=False)  # 发言评委 ID
     content = Column(Text, nullable=False)  # 发言内容
+    
+    # 调试信息
+    context_history = Column(JSON, nullable=True)  # 发言时的上下文历史（之前所有消息）
+    raw_response = Column(Text, nullable=True)  # AI 模型的原始响应
+    model_name = Column(String(100), nullable=True)  # 使用的模型
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # 关联关系

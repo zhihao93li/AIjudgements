@@ -20,22 +20,49 @@ from app.config import get_settings
 settings = get_settings()
 
 
-def build_debate_judges() -> list[AssistantAgent]:
+def build_debate_judges(
+    custom_scoring_guide: Optional[str] = None,
+    custom_personas: Optional[dict] = None,
+    custom_debate_instruction: Optional[str] = None
+) -> tuple[list[AssistantAgent], dict]:
     """
     构建所有评委 Agent（阶段二：讨论模式）
     
+    Args:
+        custom_scoring_guide: 自定义评分规范
+        custom_personas: 自定义评委人设
+        custom_debate_instruction: 自定义讨论模式说明
+    
     Returns:
-        评委 Agent 列表
+        (评委 Agent 列表, 调试上下文字典)
     """
     judges = []
+    debug_contexts = {}  # 保存每个评委的调试信息
     
-    for judge_id, persona_info in JUDGE_PERSONAS.items():
+    # 使用自定义或默认的配置
+    scoring_guide = custom_scoring_guide or COMMON_SCORING_GUIDE
+    personas = custom_personas or JUDGE_PERSONAS
+    debate_instruction = custom_debate_instruction or DEBATE_MODE_INSTRUCTION
+    
+    for judge_id, persona_info in personas.items():
         model_name = get_model_for_judge(judge_id)
-        display_name = persona_info["display_name"]
-        persona = persona_info["persona"]
+        display_name = persona_info.get("display_name", judge_id)
+        persona = persona_info.get("persona", "")
         
-        # 讨论模式的 system message：评分规范 + 人设 + 讨论模式说明
-        system_message = COMMON_SCORING_GUIDE + persona + DEBATE_MODE_INSTRUCTION
+        
+        # 讨论模式的 system message：只需要人设 + 讨论模式说明
+        # 不要包含 scoring_guide，因为那是为阶段一评分设计的（包含 inner_monologue 和 JSON 输出指令）
+        system_message = persona + debate_instruction
+        
+        # 保存调试上下文
+        debug_contexts[judge_id] = {
+            "judge_id": judge_id,
+            "display_name": display_name,
+            "model_name": model_name,
+            "system_message": system_message,
+            "persona": persona,
+            "debate_instruction": debate_instruction,
+        }
         
         try:
             # 讨论阶段不需要 vision，使用文本模型即可
@@ -54,7 +81,7 @@ def build_debate_judges() -> list[AssistantAgent]:
             logger.error(f"创建讨论评委失败: {judge_id} - {e}")
             continue
     
-    return judges
+    return judges, debug_contexts
 
 
 def build_selector_prompt(judges: list[AssistantAgent]) -> str:
@@ -68,11 +95,30 @@ def build_selector_prompt(judges: list[AssistantAgent]) -> str:
         完整的选择器 prompt
     """
     # 构建评委角色说明
-    roles = "\n".join([
-        f"- {judge.name}: {JUDGE_PERSONAS[judge.name]['display_name']} - {JUDGE_PERSONAS[judge.name]['persona'].split('特点：')[1].split('评分特点')[0].strip()}"
-        for judge in judges
-        if judge.name in JUDGE_PERSONAS
-    ])
+    # 构建评委角色说明
+    roles_list = []
+    for judge in judges:
+        if judge.name not in JUDGE_PERSONAS:
+            continue
+            
+        persona_text = JUDGE_PERSONAS[judge.name]['persona']
+        display_name = JUDGE_PERSONAS[judge.name]['display_name']
+        
+        # 尝试提取核心性格
+        try:
+            if "核心性格**：" in persona_text:
+                core_trait = persona_text.split("核心性格**：")[1].split("\n")[0].strip()
+            elif "核心特质：" in persona_text:
+                core_trait = persona_text.split("核心特质：")[1].split("\n")[0].strip()
+            else:
+                # Fallback: 取前 50 个字符
+                core_trait = persona_text.strip()[:50] + "..."
+        except Exception:
+            core_trait = "性格鲜明"
+            
+        roles_list.append(f"- {judge.name}: {display_name} - {core_trait}")
+
+    roles = "\n".join(roles_list)
     
     # 候选评委列表
     participants = ", ".join([judge.name for judge in judges])
@@ -90,6 +136,9 @@ async def run_debate_for_entry(
     competition_type: str,
     judge_results: list[dict],
     max_messages: Optional[int] = None,
+    custom_scoring_guide: Optional[str] = None,
+    custom_personas: Optional[dict] = None,
+    custom_debate_instruction: Optional[str] = None,
 ) -> dict:
     """
     阶段二主函数：评委群聊讨论
@@ -123,7 +172,11 @@ async def run_debate_for_entry(
     logger.debug(f"初评摘要:\n{summary_text}")
     
     # 2. 构建讨论模式的评委
-    judges = build_debate_judges()
+    judges, debug_contexts = build_debate_judges(
+        custom_scoring_guide=custom_scoring_guide,
+        custom_personas=custom_personas,
+        custom_debate_instruction=custom_debate_instruction
+    )
     
     if not judges:
         logger.error("没有可用的讨论评委")
@@ -167,6 +220,7 @@ async def run_debate_for_entry(
     
     # 7. 运行群聊
     debate_messages = []
+    all_messages_history = []  # 完整的消息历史（包括 user 消息）
     
     try:
         logger.info("开始运行群聊...")
@@ -177,23 +231,56 @@ async def run_debate_for_entry(
             source="user",
         )
         
+        # 记录初始消息到历史
+        all_messages_history.append({
+            "source": "user",
+            "content": summary_text,
+        })
+        
+        logger.info("=" * 80)
+        logger.info("[阶段二] 群聊开始")
+        logger.info(f"初始上下文:\n{summary_text}")
+        logger.info("=" * 80)
+        
         # 运行 stream
         result_stream = team.run_stream(task=initial_message)
         
         # 收集消息
+        message_count = 0
         async for event in result_stream:
             # 检查是否是 Agent 消息
             if hasattr(event, 'source') and hasattr(event, 'content'):
                 # 过滤掉 user 和 system 消息，只保留评委发言
                 if event.source not in ["user", "system"] and event.source in [j.name for j in judges]:
                     content = event.content if isinstance(event.content, str) else str(event.content)
+                    message_count += 1
                     
+                    # 获取该评委的模型名称
+                    model_name = get_model_for_judge(event.source)
+                    
+                    # 保存当前发言时的上下文历史（深拷贝）
+                    context_at_this_time = list(all_messages_history)
+                    
+                    # 保存消息（包含调试信息）
                     debate_messages.append({
                         "speaker": event.source,
                         "content": content,
+                        "context_history": context_at_this_time,  # 发言时看到的所有历史
+                        "raw_response": content,  # 原始响应（暂时和 content 相同）
+                        "model_name": model_name,
                     })
                     
-                    logger.info(f"[{event.source}]: {content[:100]}...")
+                    # 添加到历史记录
+                    all_messages_history.append({
+                        "source": event.source,
+                        "content": content,
+                    })
+                    
+                    logger.info("="*80)
+                    logger.info(f"[第 {message_count} 轮] 发言者: {event.source} (模型: {model_name})")
+                    logger.info(f"上下文消息数: {len(context_at_this_time)}")
+                    logger.info(f"完整回复:\n{content}")
+                    logger.info("="*80)
         
         logger.success(f"群聊讨论完成，共 {len(debate_messages)} 条消息")
         
@@ -205,10 +292,16 @@ async def run_debate_for_entry(
             "error": f"群聊运行异常: {str(e)}",
         }
     
-    # 8. 返回结果
+    # 8. 返回结果（包含调试信息）
     return {
         "entry_id": entry_id,
         "messages": debate_messages,
         "participants": [j.name for j in judges],
+        # 调试信息
+        "debug_info": {
+            "judge_contexts": debug_contexts,
+            "selector_prompt": selector_prompt,
+            "initial_message": summary_text,
+        }
     }
 

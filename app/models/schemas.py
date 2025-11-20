@@ -15,12 +15,20 @@ class EntryCreate(BaseModel):
     extra_text: Optional[str] = Field(None, description="补充说明文本")
 
 
+class JudgeCustomPrompts(BaseModel):
+    """自定义评委提示词"""
+    scoring_guide: Optional[str] = Field(None, description="自定义评分规范")
+    judge_personas: Optional[Dict[str, Dict[str, str]]] = Field(None, description="自定义评委人设")
+    debate_instruction: Optional[str] = Field(None, description="自定义讨论模式说明")
+
+
 class JudgeEntryRequest(BaseModel):
     """评委评分请求（完整流程：阶段一+二）"""
     entry_id: str = Field(..., description="作品唯一 ID")
     image_url: str = Field(..., description="图片 URL")
     competition_type: str = Field(default="outfit", description="比赛类型")
     extra_text: Optional[str] = Field(None, description="补充说明")
+    custom_prompts: Optional[JudgeCustomPrompts] = Field(None, description="自定义提示词配置")
     
     class Config:
         json_schema_extra = {
