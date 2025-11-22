@@ -3,746 +3,485 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Judge 调试详情</title>
+    <title>调试详情 - AI 毒舌秀</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.3);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --accent-color: #764ba2;
+            --code-bg: #1e1e1e;
+            --code-color: #d4d4d4;
         }
-        
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
             min-height: 100vh;
             padding: 20px;
+            color: #2d3748;
+            line-height: 1.6;
         }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
-        
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        /* Header */
         .header {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: var(--glass-border);
         }
-        
-        .header h1 {
-            color: #333;
-            font-size: 32px;
-            margin-bottom: 15px;
-        }
-        
-        .back-link {
-            display: inline-block;
-            color: #667eea;
+
+        .header h1 { color: white; font-size: 1.8em; display: flex; align-items: center; gap: 10px; }
+        .back-btn {
+            color: white;
             text-decoration: none;
-            font-size: 16px;
-            margin-bottom: 10px;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background 0.3s;
+            font-weight: 600;
         }
-        
-        .back-link:hover {
-            text-decoration: underline;
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            border: var(--glass-border);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            margin-bottom: 30px;
         }
-        
-        .entry-info {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        
-        .entry-info h2 {
-            color: #333;
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-        
+
+        /* Entry Info Grid */
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
         }
-        
-        .info-item {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .info-label {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-        
-        .info-value {
-            color: #333;
-            font-size: 16px;
-            word-break: break-all;
-        }
-        
-        .image-preview {
-            margin-top: 15px;
-            max-width: 600px;
-        }
-        
-        .image-preview img {
+
+        .info-item label { font-size: 0.85em; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+        .info-item div { font-size: 1.1em; font-weight: 500; color: #2d3748; word-break: break-all; }
+
+        .preview-img {
             width: 100%;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        
-        .section {
-            background: white;
+            max-height: 300px;
+            object-fit: cover;
             border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
         }
-        
-        .section h2 {
-            color: #333;
-            font-size: 24px;
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
             margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
+            background: rgba(0,0,0,0.05);
+            padding: 5px;
+            border-radius: 12px;
+            width: fit-content;
         }
-        
-        .judge-card {
-            background: #f9f9f9;
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: #718096;
             border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--accent-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Debug Cards */
+        .debug-card {
+            background: white;
+            border-radius: 16px;
             padding: 20px;
             margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
         }
-        
-        .judge-header {
+
+        .debug-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #e0e0e0;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .judge-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #2d3748;
         }
         
-        .judge-name {
-            font-size: 20px;
-            font-weight: bold;
-            color: #667eea;
-        }
-        
-        .judge-model {
-            font-size: 14px;
-            color: #666;
-            background: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-        }
-        
-        .toggle-button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 8px 20px;
+        .model-badge {
+            background: #ebf8ff;
+            color: #3182ce;
+            font-size: 0.75em;
+            padding: 4px 8px;
             border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 10px;
-            transition: background 0.3s;
+            font-family: monospace;
         }
-        
-        .toggle-button:hover {
-            background: #5568d3;
-        }
-        
-        .collapsible-content {
-            margin-top: 15px;
-            display: none;
-        }
-        
-        .collapsible-content.active {
-            display: block;
-        }
-        
-        .context-box {
-            background: #2d2d2d;
-            color: #f8f8f2;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 15px;
-            overflow-x: auto;
-            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        
-        .context-label {
-            font-weight: bold;
-            color: #50fa7b;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-        
-        .response-box {
-            background: #fff9e6;
-            border-left: 4px solid #ffb700;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-        }
-        
-        .response-label {
-            font-weight: bold;
-            color: #ff8c00;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-        
+
         .score-badge {
-            display: inline-block;
-            background: #667eea;
+            background: var(--primary-gradient);
             color: white;
-            padding: 8px 16px;
+            padding: 5px 12px;
             border-radius: 20px;
-            font-size: 18px;
-            font-weight: bold;
-            margin: 10px 0;
+            font-weight: 700;
+            font-size: 0.9em;
         }
-        
-        .json-output {
-            background: #f5f5f5;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 15px;
-            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
-            font-size: 12px;
-            overflow-x: auto;
-            white-space: pre;
-        }
-        
-        .debate-message {
-            background: #f0f7ff;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 6px;
-        }
-        
-        .debate-speaker {
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 8px;
-            font-size: 16px;
-        }
-        
-        .debate-content {
-            color: #333;
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-        
-        .debate-sequence {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            margin-right: 10px;
-        }
-        
-        .no-data {
-            text-align: center;
-            color: #999;
-            padding: 40px;
-            font-size: 16px;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-            font-size: 18px;
-        }
-        
-        .error {
-            background: #ffebee;
-            border-left: 4px solid #f44336;
-            padding: 20px;
-            border-radius: 6px;
-            color: #c62828;
-            margin: 20px 0;
-        }
-        
-        .copy-button {
-            background: #4caf50;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
+
+        /* Collapsible Sections */
+        .toggle-btn {
+            background: #f7fafc;
+            border: 1px solid #edf2f7;
+            width: 100%;
+            text-align: left;
+            padding: 12px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 12px;
-            float: right;
-            margin-top: -5px;
-        }
-        
-        .copy-button:hover {
-            background: #45a049;
-        }
-        
-        .tab-buttons {
+            color: #4a5568;
+            font-weight: 600;
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            transition: background 0.2s;
         }
-        
-        .tab-button {
-            background: #f0f0f0;
-            color: #666;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-        
-        .tab-button.active {
-            background: #667eea;
-            color: white;
-        }
-        
-        .tab-button:hover {
-            background: #e0e0e0;
-        }
-        
-        .tab-button.active:hover {
-            background: #5568d3;
-        }
-        
-        .tab-content {
+
+        .toggle-btn:hover { background: #edf2f7; }
+        .toggle-btn i { transition: transform 0.3s; }
+        .toggle-btn.active i { transform: rotate(180deg); }
+
+        .collapsible {
             display: none;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 0 0 8px 8px;
+            border: 1px solid #edf2f7;
+            border-top: none;
+        }
+        .collapsible.active { display: block; }
+
+        /* Code Blocks */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-color);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin-top: 5px;
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.75em;
+            cursor: pointer;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.2); }
+
+        .label-tag {
+            display: inline-block;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #a0aec0;
+            margin-bottom: 5px;
+        }
+
+        /* Chat Debug Style */
+        .chat-item {
+            margin-bottom: 20px;
+            border-left: 3px solid var(--accent-color);
+            padding-left: 15px;
+        }
+
+        .chat-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
         }
         
-        .tab-content.active {
-            display: block;
+        .chat-seq {
+            background: var(--accent-color);
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 4px;
         }
+
+        .chat-speaker { font-weight: 700; color: #2d3748; }
+        .chat-text { color: #4a5568; margin-bottom: 8px; }
+
+        /* Utility */
+        .loading, .error, .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+        .error { color: #e53e3e; background: #fff5f5; border-radius: 8px; }
+
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <a href="/" class="back-link">← 返回主页</a>
-            <h1>🔍 AI Judge 调试详情</h1>
+            <h1><i class="fas fa-bug"></i> 调试实验室</h1>
+            <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> 返回首页</a>
         </div>
-        
-        <div id="loading" class="section">
-            <div class="loading">加载中...</div>
+
+        <div id="loading" class="glass-card loading">
+            <i class="fas fa-circle-notch fa-spin fa-2x"></i><br><br>正在提取黑匣子数据...
         </div>
-        
-        <div id="error" style="display:none;"></div>
-        
-        <div id="content" style="display:none;">
-            <!-- 作品信息 -->
-            <div class="entry-info">
-                <h2>📝 作品信息</h2>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">作品 ID</div>
-                        <div class="info-value" id="entryId">-</div>
+        <div id="error" class="glass-card error" style="display:none"></div>
+
+        <div id="content" style="display:none">
+            <div class="glass-card">
+                <div style="display:flex; gap:30px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:300px;">
+                        <div class="info-grid">
+                            <div class="info-item"><label>ID</label><div id="entryId">-</div></div>
+                            <div class="info-item"><label>Type</label><div id="competitionType">-</div></div>
+                            <div class="info-item"><label>Date</label><div id="createdAt">-</div></div>
+                        </div>
+                        <div class="info-item">
+                            <label>Extra Context</label>
+                            <div id="extraText" style="background:#f7fafc; padding:10px; border-radius:8px; margin-top:5px;">-</div>
+                        </div>
                     </div>
-                    <div class="info-item">
-                        <div class="info-label">比赛类型</div>
-                        <div class="info-value" id="competitionType">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">创建时间</div>
-                        <div class="info-value" id="createdAt">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">补充说明</div>
-                        <div class="info-value" id="extraText">-</div>
+                    <div style="flex:0 0 200px;">
+                        <div id="imagePreview"></div>
                     </div>
                 </div>
-                <div class="info-item">
-                    <div class="info-label">图片 URL</div>
-                    <div class="info-value" id="imageUrl">-</div>
-                </div>
-                <div class="image-preview" id="imagePreview"></div>
             </div>
-            
-            <!-- Tab 切换按钮 -->
-            <div class="section">
-                <div class="tab-buttons">
-                    <button class="tab-button active" onclick="switchTab('stage1')">阶段一：独立评分</button>
-                    <button class="tab-button" onclick="switchTab('stage2')">阶段二：群聊讨论</button>
+
+            <div class="glass-card">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('stage1')"><i class="fas fa-star-half-alt"></i> 阶段一：独立评分</button>
+                    <button class="tab-btn" onclick="switchTab('stage2')"><i class="fas fa-comments"></i> 阶段二：群聊讨论</button>
                 </div>
-                
-                <!-- 阶段一内容 -->
+
                 <div id="stage1Tab" class="tab-content active">
-                    <h2>📊 阶段一：独立评分详情</h2>
-                    <p style="color: #666; margin-bottom: 20px;">展示每个 AI 评委收到的完整请求上下文和回复结果</p>
                     <div id="stageOneContent"></div>
                 </div>
-                
-                <!-- 阶段二内容 -->
+
                 <div id="stage2Tab" class="tab-content">
-                    <h2>💬 阶段二：群聊讨论详情</h2>
-                    <p style="color: #666; margin-bottom: 20px;">展示评委们在群聊中的讨论过程</p>
                     <div id="stageTwoContent"></div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <script>
-        // 从 URL 获取 entry_id
+        // Utils
         const urlParams = new URLSearchParams(window.location.search);
         const entryId = urlParams.get('entry_id');
-        
-        if (!entryId) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('error').innerHTML = '<div class="error">错误：未提供作品 ID</div>';
-            document.getElementById('error').style.display = 'block';
-        } else {
-            loadDebugInfo(entryId);
-        }
-        
-        async function loadDebugInfo(entryId) {
+
+        // Load Data
+        if (!entryId) showError('缺少 entry_id 参数');
+        else loadDebugInfo(entryId);
+
+        async function loadDebugInfo(id) {
             try {
-                const response = await fetch(`/api/debug/entry/${entryId}`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                renderDebugInfo(data);
-                
+                const res = await fetch(`/api/debug/entry/${id}`);
+                if (!res.ok) throw new Error(res.statusText);
+                const data = await res.json();
+                render(data);
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('content').style.display = 'block';
-                
-            } catch (error) {
-                console.error('加载调试信息失败:', error);
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').innerHTML = `
-                    <div class="error">
-                        <strong>加载失败:</strong> ${error.message}
-                    </div>
-                `;
-                document.getElementById('error').style.display = 'block';
+            } catch (err) {
+                showError(err.message);
             }
         }
-        
-        function renderDebugInfo(data) {
-            // 渲染作品信息
+
+        function render(data) {
+            // Info
             document.getElementById('entryId').textContent = data.entry_id;
             document.getElementById('competitionType').textContent = data.competition_type;
-            document.getElementById('createdAt').textContent = data.created_at ? new Date(data.created_at).toLocaleString('zh-CN') : '-';
+            document.getElementById('createdAt').textContent = new Date(data.created_at).toLocaleString();
             document.getElementById('extraText').textContent = data.extra_text || '无';
-            document.getElementById('imageUrl').textContent = data.image_url;
-            
-            // 渲染图片预览
             if (data.image_url) {
-                document.getElementById('imagePreview').innerHTML = `<img src="${data.image_url}" alt="作品图片">`;
+                document.getElementById('imagePreview').innerHTML = `<img src="${data.image_url}" class="preview-img" onclick="window.open(this.src)">`;
             }
-            
-            // 渲染阶段一：独立评分
-            renderStageOne(data.stage_one);
-            
-            // 渲染阶段二：群聊讨论
-            renderStageTwo(data.stage_two);
-        }
-        
-        function renderStageOne(stageOne) {
-            const container = document.getElementById('stageOneContent');
-            
-            if (!stageOne.judges || stageOne.judges.length === 0) {
-                container.innerHTML = '<div class="no-data">暂无评分数据</div>';
-                return;
-            }
-            
-            let html = '';
-            
-            stageOne.judges.forEach((judge, index) => {
-                html += `
-                    <div class="judge-card">
-                        <div class="judge-header">
-                            <div>
-                                <div class="judge-name">${judge.judge_display_name}</div>
-                                <div style="color: #666; font-size: 14px; margin-top: 5px;">ID: ${judge.judge_id}</div>
+
+            // Stage 1
+            const s1Container = document.getElementById('stageOneContent');
+            if (!data.stage_one.judges?.length) s1Container.innerHTML = '<div class="no-data">暂无数据</div>';
+            else {
+                s1Container.innerHTML = data.stage_one.judges.map((j, i) => `
+                    <div class="debug-card">
+                        <div class="debug-header">
+                            <div class="judge-tag">
+                                <span>${j.judge_display_name}</span>
+                                <span class="model-badge">${j.model_name}</span>
                             </div>
-                            <div>
-                                ${judge.model_name ? `<div class="judge-model">🤖 ${judge.model_name}</div>` : ''}
-                                <div class="score-badge">⭐ ${judge.response.overall_score}</div>
-                            </div>
+                            <div class="score-badge">${j.response.overall_score}分</div>
                         </div>
                         
-                        <button class="toggle-button" onclick="toggleContent('request-${index}')">
-                            查看请求上下文 ▼
+                        <button class="toggle-btn" onclick="toggle(this)">
+                            <span><i class="fas fa-arrow-up"></i> 请求上下文 (Input)</span> <i class="fas fa-chevron-down"></i>
                         </button>
-                        
-                        <div id="request-${index}" class="collapsible-content">
-                            <div class="context-box">
-                                <div class="context-label">📋 System Message (系统消息)</div>
-                                ${escapeHtml(judge.request_context.system_message || '无')}
-                            </div>
-                            
-                            <div class="context-box">
-                                <div class="context-label">📸 User Instruction (用户指令)</div>
-                                ${escapeHtml(judge.request_context.user_instruction || '无')}
-                            </div>
+                        <div class="collapsible">
+                            <div class="label-tag">System Message</div>
+                            <div class="code-box">${escapeHtml(j.request_context.system_message)}</div>
+                            <div class="label-tag" style="margin-top:10px">User Instruction</div>
+                            <div class="code-box">${escapeHtml(j.request_context.user_instruction)}</div>
                         </div>
-                        
-                        <button class="toggle-button" onclick="toggleContent('response-${index}')">
-                            查看回复详情 ▼
+
+                        <button class="toggle-btn" onclick="toggle(this)">
+                            <span><i class="fas fa-arrow-down"></i> 响应详情 (Output)</span> <i class="fas fa-chevron-down"></i>
                         </button>
-                        
-                        <div id="response-${index}" class="collapsible-content">
-                            <div class="response-box">
-                                <div class="response-label">💬 一句话点评</div>
-                                ${judge.response.one_liner || '-'}
+                        <div class="collapsible">
+                            <div style="margin-bottom:10px; font-style:italic; color:#4a5568">
+                                "${j.response.comment_for_audience}"
                             </div>
-                            
-                            <div class="response-box">
-                                <div class="response-label">📝 详细评语</div>
-                                ${judge.response.comment_for_audience || '-'}
+                            <div class="label-tag">Raw JSON Output</div>
+                            <div class="code-box">
+                                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+                                ${escapeHtml(j.response.raw_output)}
                             </div>
-                            
-                            ${judge.response.strengths && judge.response.strengths.length > 0 ? `
-                                <div class="response-box">
-                                    <div class="response-label">✅ 优点</div>
-                                    <ul style="margin-left: 20px;">
-                                        ${judge.response.strengths.map(s => `<li>${s}</li>`).join('')}
-                                    </ul>
-                                </div>
-                            ` : ''}
-                            
-                            ${judge.response.weaknesses && judge.response.weaknesses.length > 0 ? `
-                                <div class="response-box">
-                                    <div class="response-label">⚠️ 缺点</div>
-                                    <ul style="margin-left: 20px;">
-                                        ${judge.response.weaknesses.map(w => `<li>${w}</li>`).join('')}
-                                    </ul>
-                                </div>
-                            ` : ''}
-                            
-                            <div class="context-label" style="color: #333; margin-top: 15px;">
-                                🔧 Raw Output (原始输出)
-                                <button class="copy-button" onclick="copyToClipboard(\`${escapeForJs(judge.response.raw_output)}\`)">复制</button>
-                            </div>
-                            <div class="json-output">${escapeHtml(judge.response.raw_output || '无')}</div>
                         </div>
                     </div>
-                `;
-            });
-            
-            container.innerHTML = html;
-        }
-        
-        function renderStageTwo(stageTwo) {
-            const container = document.getElementById('stageTwoContent');
-            
-            if (!stageTwo.debate_sessions || stageTwo.debate_sessions.length === 0) {
-                container.innerHTML = '<div class="no-data">暂无讨论数据</div>';
-                return;
+                `).join('');
             }
-            
-            let html = '';
-            
-            stageTwo.debate_sessions.forEach((session, sessionIndex) => {
-                html += `
-                    <div style="margin-bottom: 30px;">
-                        <h3 style="color: #667eea; margin-bottom: 15px;">
-                            讨论会话 ${sessionIndex + 1}
-                            <span style="font-size: 14px; color: #999; font-weight: normal;">
-                                (${session.participants.length} 位参与者)
-                            </span>
-                        </h3>
-                        
-                        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                            <strong>参与评委:</strong> ${session.participants.join(', ')}
+
+            // Stage 2
+            const s2Container = document.getElementById('stageTwoContent');
+            if (!data.stage_two.debate_sessions?.length) s2Container.innerHTML = '<div class="no-data">暂无讨论数据</div>';
+            else {
+                s2Container.innerHTML = data.stage_two.debate_sessions.map((s, i) => `
+                    <div class="debug-card">
+                        <div class="debug-header">
+                            <div class="judge-tag">会话 #${i+1} (${s.participants.length}人)</div>
                         </div>
-                `;
-                
-                // 展示初始消息和选择器提示词
-                if (session.initial_message || session.selector_prompt) {
-                    html += `
-                        <button class="toggle-button" onclick="toggleContent('session-context-${sessionIndex}')">
-                            查看群聊上下文 ▼
+
+                        <button class="toggle-btn" onclick="toggle(this)">
+                            <span><i class="fas fa-database"></i> 会话上下文配置</span> <i class="fas fa-chevron-down"></i>
                         </button>
-                        
-                        <div id="session-context-${sessionIndex}" class="collapsible-content">
-                    `;
-                    
-                    if (session.initial_message) {
-                        html += `
-                            <div class="context-box">
-                                <div class="context-label">📝 Initial Message (初始消息)</div>
-                                ${escapeHtml(session.initial_message)}
-                            </div>
-                        `;
-                    }
-                    
-                    if (session.selector_prompt) {
-                        html += `
-                            <div class="context-box">
-                                <div class="context-label">🎯 Selector Prompt (选择器提示词)</div>
-                                ${escapeHtml(session.selector_prompt)}
-                            </div>
-                        `;
-                    }
-                    
-                    html += '</div>';
-                }
-                
-                // 展示每个评委的上下文信息
-                if (session.judge_contexts) {
-                    html += `
-                        <button class="toggle-button" onclick="toggleContent('session-judges-${sessionIndex}')">
-                            查看评委上下文配置 ▼
-                        </button>
-                        
-                        <div id="session-judges-${sessionIndex}" class="collapsible-content">
-                    `;
-                    
-                    for (const [judgeId, context] of Object.entries(session.judge_contexts)) {
-                        html += `
-                            <div class="judge-card" style="margin-bottom: 15px;">
-                                <div class="judge-header">
-                                    <div class="judge-name">${context.display_name || judgeId}</div>
-                                    ${context.model_name ? `<div class="judge-model">🤖 ${context.model_name}</div>` : ''}
-                                </div>
-                                
-                                <div class="context-box">
-                                    <div class="context-label">📋 System Message (系统消息)</div>
-                                    ${escapeHtml(context.system_message || '无')}
-                                </div>
-                            </div>
-                        `;
-                    }
-                    
-                    html += '</div>';
-                }
-                
-                // 展示对话消息
-                html += '<h4 style="color: #333; margin: 20px 0 15px 0;">💬 对话记录</h4>';
-                
-                if (session.messages && session.messages.length > 0) {
-                    session.messages.forEach((msg, msgIndex) => {
-                        // 从 judge_contexts 获取评委显示名称
-                        let speakerName = msg.speaker;
-                        if (session.judge_contexts && session.judge_contexts[msg.speaker]) {
-                            speakerName = session.judge_contexts[msg.speaker].display_name || msg.speaker;
-                        }
-                        
-                        html += `
-                            <div class="debate-message" style="position: relative;">
-                                <div class="debate-speaker">
-                                    <span class="debate-sequence">#${msg.sequence}</span>
-                                    ${speakerName}
-                                    ${msg.model_name ? `<span style="font-size: 12px; color: #999; margin-left: 10px;">🤖 ${msg.model_name}</span>` : ''}
-                                </div>
-                                <div class="debate-content">${escapeHtml(msg.content)}</div>
-                                
-                                ${msg.context_history || msg.raw_response ? `
-                                    <button class="toggle-button" style="margin-top: 10px;" onclick="toggleContent('msg-debug-${sessionIndex}-${msgIndex}')">
-                                        查看调试详情 ▼
-                                    </button>
-                                    
-                                    <div id="msg-debug-${sessionIndex}-${msgIndex}" class="collapsible-content">
-                                        ${msg.context_history ? `
-                                            <div class="context-box">
-                                                <div class="context-label">📋 Context History (发言时的上下文历史)</div>
-                                                <div style="color: #999; font-size: 12px; margin-bottom: 10px;">
-                                                    此评委发言时看到的所有历史消息（共 ${msg.context_history.length} 条）
-                                                </div>
-                                                ${msg.context_history.map((ctx, ctxIdx) => `
-                                                    <div style="background: ${ctx.source === 'user' ? '#fff3cd' : '#e3f2fd'}; padding: 8px; margin-bottom: 8px; border-radius: 4px; border-left: 3px solid ${ctx.source === 'user' ? '#ffc107' : '#2196f3'};">
-                                                        <div style="font-weight: bold; font-size: 12px; color: #666; margin-bottom: 4px;">
-                                                            ${ctxIdx + 1}. ${ctx.source === 'user' ? '🔵 Initial Message' : '💬 ' + ctx.source}
-                                                        </div>
-                                                        <div style="font-size: 13px; white-space: pre-wrap;">
-                                                            ${escapeHtml(ctx.content.substring(0, 200))}${ctx.content.length > 200 ? '...' : ''}
-                                                        </div>
-                                                    </div>
-                                                `).join('')}
-                                            </div>
-                                        ` : ''}
-                                        
-                                        ${msg.raw_response ? `
-                                            <div class="context-box">
-                                                <div class="context-label">
-                                                    🔧 Raw Response (原始响应)
-                                                    <button class="copy-button" onclick="copyToClipboard(\`${escapeForJs(msg.raw_response)}\`)">复制</button>
-                                                </div>
-                                                ${escapeHtml(msg.raw_response)}
-                                            </div>
-                                        ` : ''}
+                        <div class="collapsible">
+                            <div class="label-tag">Selector Prompt</div>
+                            <div class="code-box">${escapeHtml(s.selector_prompt)}</div>
+                            <div class="label-tag" style="margin-top:10px">Initial Message</div>
+                            <div class="code-box">${escapeHtml(s.initial_message)}</div>
+                        </div>
+
+                        <div style="margin-top:20px;">
+                            ${s.messages.map(m => `
+                                <div class="chat-item">
+                                    <div class="chat-meta">
+                                        <span class="chat-seq">#${m.sequence}</span>
+                                        <span class="chat-speaker">${m.speaker}</span>
+                                        <span class="model-badge" style="font-size:0.7em">${m.model_name || 'Unknown'}</span>
                                     </div>
-                                ` : ''}
-                            </div>
-                        `;
-                    });
-                } else {
-                    html += '<div class="no-data">暂无消息</div>';
-                }
-                
-                html += '</div>';
-            });
-            
-            container.innerHTML = html;
+                                    <div class="chat-text">${escapeHtml(m.content)}</div>
+                                    
+                                    <button class="toggle-btn" style="padding:5px 10px; font-size:0.85em" onclick="toggle(this)">
+                                        <span>🔍 查看完整上下文历史 & Raw Output</span> <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                    <div class="collapsible">
+                                        <div class="label-tag">Context History (Memory)</div>
+                                        <div class="code-box" style="max-height:200px;">${formatContextHistory(m.context_history)}</div>
+                                        <div class="label-tag" style="margin-top:10px">Raw Response</div>
+                                        <div class="code-box">${escapeHtml(m.raw_response)}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            }
         }
-        
-        function toggleContent(id) {
-            const element = document.getElementById(id);
-            element.classList.toggle('active');
-        }
-        
-        function switchTab(tab) {
-            // 切换按钮状态
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
+
+        // Helpers
+        function switchTab(id) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             event.target.classList.add('active');
-            
-            // 切换内容显示
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(`${tab}Tab`).classList.add('active');
+            document.getElementById(id + 'Tab').classList.add('active');
         }
-        
+
+        function toggle(btn) {
+            btn.classList.toggle('active');
+            btn.nextElementSibling.classList.toggle('active');
+        }
+
+        function showError(msg) {
+            document.getElementById('loading').style.display = 'none';
+            const errEl = document.getElementById('error');
+            errEl.textContent = '错误: ' + msg;
+            errEl.style.display = 'block';
+        }
+
         function escapeHtml(text) {
             if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+            if (typeof text !== 'string') text = JSON.stringify(text, null, 2);
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
-        
-        function escapeForJs(text) {
-            if (!text) return '';
-            return text.replace(/`/g, '\\`').replace(/\$/g, '\\$');
+
+        function formatContextHistory(history) {
+            if (!history || !Array.isArray(history)) return 'No history';
+            return history.map((h, i) => `[${i}] ${h.source}: ${h.content.substring(0, 50)}...`).join('\n');
         }
-        
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('已复制到剪贴板！');
-            }).catch(err => {
-                console.error('复制失败:', err);
-                alert('复制失败，请手动复制');
-            });
+
+        function copyText(btn) {
+            const text = btn.parentElement.innerText.replace('Copy', '').trim();
+            navigator.clipboard.writeText(text);
+            const original = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = original, 1500);
         }
     </script>
 </body>
 </html>
-

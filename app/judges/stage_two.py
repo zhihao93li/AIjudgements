@@ -41,7 +41,12 @@ def build_debate_judges(
     
     # 使用自定义或默认的配置
     scoring_guide = custom_scoring_guide or COMMON_SCORING_GUIDE
-    personas = custom_personas or JUDGE_PERSONAS
+    
+    # 获取当前配置的人设
+    from app.judges.config_manager import config_manager
+    current_personas = config_manager.get_personas()
+    
+    personas = custom_personas or current_personas
     debate_instruction = custom_debate_instruction or DEBATE_MODE_INSTRUCTION
     
     for judge_id, persona_info in personas.items():
@@ -97,12 +102,17 @@ def build_selector_prompt(judges: list[AssistantAgent]) -> str:
     # 构建评委角色说明
     # 构建评委角色说明
     roles_list = []
+    
+    # 获取当前配置的人设
+    from app.judges.config_manager import config_manager
+    current_personas = config_manager.get_personas()
+    
     for judge in judges:
-        if judge.name not in JUDGE_PERSONAS:
+        if judge.name not in current_personas:
             continue
             
-        persona_text = JUDGE_PERSONAS[judge.name]['persona']
-        display_name = JUDGE_PERSONAS[judge.name]['display_name']
+        persona_text = current_personas[judge.name]['persona']
+        display_name = current_personas[judge.name]['display_name']
         
         # 尝试提取核心性格
         try:
@@ -253,6 +263,91 @@ async def run_debate_for_entry(
                 # 过滤掉 user 和 system 消息，只保留评委发言
                 if event.source not in ["user", "system"] and event.source in [j.name for j in judges]:
                     content = event.content if isinstance(event.content, str) else str(event.content)
+                    # --- 清洗逻辑开始 ---
+                    import re
+                    
+                    # 1. 去除 <thinking> 标签内容
+                    content = re.sub(r'<thinking>.*?</thinking>', '', content, flags=re.DOTALL)
+                    
+                    def extract_final_response(text: str) -> str:
+                        """
+                        尝试从思维链中提取最终回复
+                        """
+                        # 策略 A: 寻找明确的"最终发言"标记
+                        # 匹配模式： "所以最终发言应该是："、"所以组合起来："、"最终："
+                        final_markers = [
+                            r"所以最终发言应该是[：:]\s*",
+                            r"所以组合起来[：:]\s*",
+                            r"最终发言[：:]\s*",
+                            r"最终[：:]\s*",
+                        ]
+                        
+                        for marker in final_markers:
+                            # 查找最后一个匹配项（防止中间有类似的引用）
+                            matches = list(re.finditer(marker, text))
+                            if matches:
+                                last_match = matches[-1]
+                                return text[last_match.end():].strip()
+                        
+                        # 策略 B: 寻找最后一个"草稿"标记
+                        # 模型经常说 "比如：..." "或者：..."
+                        draft_markers = [
+                            r"比如[：:]\s*",
+                            r"或者[：:]\s*",
+                            r"或者更符合人设[：:]\s*",
+                        ]
+                        
+                        last_draft_pos = -1
+                        for marker in draft_markers:
+                            matches = list(re.finditer(marker, text))
+                            if matches:
+                                pos = matches[-1].end()
+                                if pos > last_draft_pos:
+                                    last_draft_pos = pos
+                        
+                        if last_draft_pos != -1:
+                            # 提取最后一个草稿之后的内容
+                            return text[last_draft_pos:].strip()
+                            
+                        return text
+
+                    # 2. 执行提取策略
+                    extracted_content = extract_final_response(content)
+                    
+                    # 3. 最后的安全网：如果提取后的内容仍然包含大量思维链关键词，则进一步清洗
+                    def is_thinking_block(text_block: str) -> bool:
+                        keywords = ["人设", "扮演", "口头禅", "首先", "然后", "用户", "需要我", "对话", "观点", "反驳", "支持", "要注意", "比如", "或者"]
+                        hit_count = 0
+                        for kw in keywords:
+                            if kw in text_block:
+                                hit_count += 1
+                        
+                        if (text_block.startswith("我") or text_block.startswith("用户")) and ("扮演" in text_block or "人设" in text_block):
+                            return True
+                        if hit_count >= 3:
+                            return True
+                        return False
+
+                    # 如果提取并没有显著改变长度（说明没找到标记），或者提取后的内容看起来还是像思维链
+                    # 则应用逐行清洗
+                    lines = extracted_content.split('\n')
+                    cleaned_lines = []
+                    for line in lines:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        if not is_thinking_block(line):
+                            cleaned_lines.append(line)
+                        else:
+                            logger.debug(f"检测到思维链并移除: {line[:50]}...")
+                    
+                    content = '\n'.join(cleaned_lines).strip()
+                    
+                    # 如果清洗后内容为空，说明这条消息纯粹是思维链，跳过
+                    if not content:
+                        logger.warning(f"跳过纯思维链消息: {event.source}")
+                        continue
+                    # --- 清洗逻辑结束 ---
                     message_count += 1
                     
                     # 获取该评委的模型名称

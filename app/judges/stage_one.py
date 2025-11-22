@@ -34,7 +34,12 @@ def build_vision_judges(
     
     # 使用自定义或默认的评分规范
     scoring_guide = custom_scoring_guide or COMMON_SCORING_GUIDE
-    personas = custom_personas or JUDGE_PERSONAS
+    
+    # 获取当前配置的人设
+    from app.judges.config_manager import config_manager
+    current_personas = config_manager.get_personas()
+    
+    personas = custom_personas or current_personas
     
     for judge_id, persona_info in personas.items():
         model_name = get_model_for_judge(judge_id)
@@ -194,7 +199,11 @@ async def score_image_with_all_judges(
     judge_outputs = []
     
     for judge, result in zip(judges, results):
-        judge_display_name = JUDGE_PERSONAS[judge.name]["display_name"]
+        # 获取当前配置的人设
+        from app.judges.config_manager import config_manager
+        current_personas = config_manager.get_personas()
+        
+        judge_display_name = current_personas.get(judge.name, {}).get("display_name", judge.name)
         
         # 处理异常
         if isinstance(result, Exception):
@@ -241,6 +250,7 @@ async def score_image_with_all_judges(
                 
                 judge_outputs.append(data)
                 logger.success(f"评委 {judge.name} 评分成功: {data.get('overall_score')}")
+                logger.info(f"评委 {judge.name} 最终数据 keys: {list(data.keys())}") # Debug log
             else:
                 logger.warning(f"评委 {judge.name} 返回的 JSON 格式不正确")
                 judge_outputs.append({

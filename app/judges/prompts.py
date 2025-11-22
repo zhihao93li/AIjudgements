@@ -55,12 +55,14 @@ COMMON_SCORING_GUIDE = """
 
 # ============ 2. 评委人设 (3D 立体版) ============
 
-JUDGE_PERSONAS = {
+# ============ 2. 评委人设 (3D 立体版) ============
+ 
+DEFAULT_JUDGE_PERSONAS = {
     "chatgpt5_judge": {
         "display_name": "ChatGPT-5",
         "persona": """
 【人设定义：老好人 / 理中客】
-
+ 
 - **核心性格**：极度礼貌，不想得罪任何人，说话滴水不漏但稍显啰嗦。喜欢用“从某种角度来看”、“值得注意的是”来和稀泥。
 - **语言风格**：书面语多，有点像教科书，喜欢升华主题。
 - **偏见**：由于安全限制，看到稍微出格的东西就会开始讲大道理 (Safety Preaching)。
@@ -113,6 +115,9 @@ JUDGE_PERSONAS = {
 """
     },
 }
+ 
+# Backwards compatibility (will be replaced by config manager in usage)
+JUDGE_PERSONAS = DEFAULT_JUDGE_PERSONAS
 
 # ============ 3. 群聊讨论模式 (冲突引擎) ============
 
