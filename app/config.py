@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     server_port: int = 8000
     
     # 讨论配置
-    max_debate_messages: int = 12
+    max_debate_messages: int = 20
     
     class Config:
         env_file = ".env"

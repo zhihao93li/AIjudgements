@@ -3,6 +3,7 @@
 import asyncio
 from typing import Optional
 from io import BytesIO
+from pathlib import Path
 
 import requests
 from PIL import Image as PILImage
@@ -101,17 +102,29 @@ def build_multimodal_message(
     Returns:
         MultiModalMessage 实例
     """
-    # 下载图片
+    # 下载图片或读取本地文件
     try:
-        resp = requests.get(image_url, timeout=30)
-        resp.raise_for_status()
-        pil_image = PILImage.open(BytesIO(resp.content))
+        if image_url.startswith("/static/uploads/"):
+            # 处理本地文件
+            # 假设 /static/uploads/ 对应 frontend/uploads/
+            filename = image_url.split("/")[-1]
+            local_path = Path(__file__).parent.parent.parent / "frontend" / "uploads" / filename
+            
+            if not local_path.exists():
+                raise FileNotFoundError(f"本地文件不存在: {local_path}")
+                
+            pil_image = PILImage.open(local_path)
+        else:
+            # 处理远程 URL
+            resp = requests.get(image_url, timeout=30)
+            resp.raise_for_status()
+            pil_image = PILImage.open(BytesIO(resp.content))
         
         # 转换为 AutoGen 的 Image 对象
         ag_image = AGImage(pil_image)
         
     except Exception as e:
-        logger.error(f"下载图片失败: {image_url} - {e}")
+        logger.error(f"获取图片失败: {image_url} - {e}")
         raise
     
     # 构建指令文本

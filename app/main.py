@@ -65,8 +65,16 @@ app.include_router(router, prefix="/api", tags=["评委系统"])
 
 # 挂载前端静态文件
 frontend_path = Path(__file__).parent.parent / "frontend"
+logos_path = Path(__file__).parent.parent / "logos"
+
 if frontend_path.exists():
     app.mount("/static", StaticFiles(directory=str(frontend_path)), name="static")
+
+# 挂载 logos 文件夹
+if logos_path.exists():
+    app.mount("/logos", StaticFiles(directory=str(logos_path)), name="logos")
+
+if frontend_path.exists():
     
     @app.get("/")
     async def root():
@@ -97,6 +105,22 @@ if frontend_path.exists():
         if config_file.exists():
             return FileResponse(str(config_file))
         return {"error": "配置页面不存在"}
+
+    @app.get("/results.html")
+    async def results_page_html():
+        """结果展示页面 (.html)"""
+        results_file = frontend_path / "results.html"
+        if results_file.exists():
+            return FileResponse(str(results_file))
+        return {"error": "结果页面不存在"}
+
+    @app.get("/results")
+    async def results_page():
+        """结果展示页面"""
+        results_file = frontend_path / "results.html"
+        if results_file.exists():
+            return FileResponse(str(results_file))
+        return {"error": "结果页面不存在"}
 else:
     @app.get("/")
     async def root():

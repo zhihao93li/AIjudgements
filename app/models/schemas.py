@@ -24,7 +24,7 @@ class JudgeCustomPrompts(BaseModel):
 
 class JudgeEntryRequest(BaseModel):
     """评委评分请求（完整流程：阶段一+二）"""
-    entry_id: str = Field(..., description="作品唯一 ID")
+    entry_id: Optional[str] = Field(default="", description="作品唯一 ID（留空则自动生成）")
     image_url: str = Field(..., description="图片 URL")
     competition_type: str = Field(default="outfit", description="比赛类型")
     extra_text: Optional[str] = Field(None, description="补充说明")
@@ -33,7 +33,6 @@ class JudgeEntryRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "entry_id": "entry_001",
                 "image_url": "https://example.com/image.jpg",
                 "competition_type": "outfit",
                 "extra_text": "日常通勤穿搭"
@@ -59,8 +58,7 @@ class JudgeResultResponse(BaseModel):
     strengths: Optional[List[str]] = Field(None, description="优点列表")
     weaknesses: Optional[List[str]] = Field(None, description="缺点列表")
     one_liner: Optional[str] = Field(None, description="一句话点评")
-    comment_for_audience: Optional[str] = Field(None, description="给观众的评语")
-    safety_notes: Optional[List[str]] = Field(None, description="安全/合规提示")
+    inner_monologue: Optional[str] = Field(None, description="内心独白/给观众的评语")
     
     class Config:
         from_attributes = True
@@ -104,6 +102,8 @@ class JudgeEntryResponse(BaseModel):
     """评委评分完整响应（阶段一+二）"""
     entry_id: str = Field(..., description="作品 ID")
     competition_type: str = Field(..., description="比赛类型")
+    image_url: Optional[str] = Field(None, description="作品图片 URL")
+    overall_score: Optional[float] = Field(None, description="综合评分（所有评委的平均分）")
     judge_results: List[JudgeResultResponse] = Field(..., description="所有评委的评分")
     sorted_results: List[JudgeResultResponse] = Field(..., description="按分数排序的评委评分")
     debate: Optional[DebateResponse] = Field(None, description="群聊讨论内容")

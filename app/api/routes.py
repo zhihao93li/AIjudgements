@@ -1,8 +1,11 @@
 """API 路由定义"""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
+import shutil
+from pathlib import Path
+import uuid
 
 from app.models.schemas import (
     JudgeEntryRequest,
@@ -22,8 +25,35 @@ from app.db.crud import (
 )
 from app.judges import score_image_with_all_judges, run_debate_for_entry
 from app.judges.prompts import COMMON_SCORING_GUIDE, JUDGE_PERSONAS, DEBATE_MODE_INSTRUCTION
+from app.judges.config_manager import config_manager
 
 router = APIRouter()
+
+@router.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """上传图片并返回访问 URL"""
+    try:
+        # 确保上传目录存在
+        upload_dir = Path(__file__).parent.parent.parent / "frontend" / "uploads"
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 生成唯一文件名
+        file_ext = Path(file.filename).suffix
+        if not file_ext:
+            file_ext = ".jpg"
+        filename = f"{uuid.uuid4().hex}{file_ext}"
+        file_path = upload_dir / filename
+        
+        # 保存文件
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # 返回静态访问 URL
+        return {"url": f"/static/uploads/{filename}"}
+        
+    except Exception as e:
+        logger.error(f"文件上传失败: {e}")
+        raise HTTPException(status_code=500, detail=f"文件上传失败: {str(e)}")
 
 
 @router.post("/judge_entry", response_model=JudgeEntryResponse)
@@ -42,6 +72,12 @@ async def judge_entry(
     6. 返回完整结果
     """
     logger.info(f"收到评分请求: entry_id={request.entry_id}, type={request.competition_type}")
+    
+    # 自动生成 entry_id（如果未提供）
+    import uuid
+    if not request.entry_id or request.entry_id.strip() == "":
+        request.entry_id = f"entry_{uuid.uuid4().hex[:12]}"
+        logger.info(f"自动生成 entry_id: {request.entry_id}")
     
     try:
         # 1. 保存作品信息
@@ -174,8 +210,7 @@ async def judge_entry(
             strengths=r.get("strengths"),
             weaknesses=r.get("weaknesses"),
             one_liner=r.get("one_liner"),
-            comment_for_audience=r.get("comment_for_audience"),
-            safety_notes=r.get("safety_notes"),
+            inner_monologue=r.get("inner_monologue"),
         )
         for r in judge_results
     ]
@@ -191,21 +226,26 @@ async def judge_entry(
             strengths=r.get("strengths"),
             weaknesses=r.get("weaknesses"),
             one_liner=r.get("one_liner"),
-            comment_for_audience=r.get("comment_for_audience"),
-            safety_notes=r.get("safety_notes"),
+            inner_monologue=r.get("inner_monologue"),
         )
         for r in sorted_results
     ]
     
+    # 计算综合评分（所有评委的平均分）
+    valid_scores = [r["overall_score"] for r in judge_results if r.get("overall_score", 0) > 0]
+    average_score = sum(valid_scores) / len(valid_scores) if valid_scores else None
+    
     response = JudgeEntryResponse(
         entry_id=request.entry_id,
         competition_type=request.competition_type,
+        image_url=request.image_url,
+        overall_score=average_score,
         judge_results=judge_result_responses,
         sorted_results=sorted_result_responses,
         debate=debate_result,
     )
     
-    logger.success(f"完整评分流程完成: entry_id={request.entry_id}")
+    logger.success(f"完整评分流程完成: entry_id={request.entry_id}, 综合评分={average_score}")
     
     return response
 

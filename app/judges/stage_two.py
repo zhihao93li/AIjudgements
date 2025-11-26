@@ -207,6 +207,7 @@ async def run_debate_for_entry(
     
     # 5. 配置终止条件
     max_msgs = max_messages or settings.max_debate_messages
+    logger.info(f"[阶段二] 配置最大消息数: {max_msgs}")
     termination = MaxMessageTermination(max_messages=max_msgs)
     
     # 6. 创建 SelectorGroupChat
@@ -258,6 +259,15 @@ async def run_debate_for_entry(
         # 收集消息
         message_count = 0
         async for event in result_stream:
+            # 只处理真正的消息事件，过滤其他event类型（如TaskResult等）
+            # 检查event的类名，autogen的消息类通常包含'Message'
+            event_type = event.__class__.__name__
+            
+            # 只处理消息类型的event
+            if 'Message' not in event_type:
+                logger.debug(f"跳过非消息事件: {event_type}")
+                continue
+            
             # 检查是否是 Agent 消息
             if hasattr(event, 'source') and hasattr(event, 'content'):
                 # 过滤掉 user 和 system 消息，只保留评委发言

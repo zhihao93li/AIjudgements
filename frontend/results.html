@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 毒舌秀 - 评审结果</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.3);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --accent-color: #764ba2;
+            --text-color: #2d3748;
+            --chat-bg: #e5ddd5;
+            --chat-bubble-in: #ffffff;
+            --chat-bubble-out: #dcf8c6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            max-width: 800px;
+            /* Mobile-first focus for results */
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            color: white;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            backdrop-filter: blur(5px);
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            border: var(--glass-border);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        /* Score Card (Viral) */
+        .viral-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .viral-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .viral-score {
+            font-size: 4em;
+            font-weight: 800;
+            line-height: 1;
+            margin: 10px 0;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .viral-image {
+            width: 100%;
+            height: 300px;
+            object-fit: contain;
+            background: #f0f0f0;
+        }
+
+        .viral-content {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .viral-quote {
+            font-size: 1.2em;
+            font-style: italic;
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .viral-footer {
+            border-top: 1px solid #eee;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+            color: #718096;
+            background: #f8fafc;
+        }
+
+        /* Chat Interface */
+        .chat-section {
+            background: #f0f2f5;
+            /* WhatsApp-like bg */
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: #ffffff;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .group-avatar {
+            width: 45px;
+            height: 45px;
+            background: #ddd;
+            border-radius: 50%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            overflow: hidden;
+        }
+
+        .group-avatar-part {
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .chat-body {
+            padding: 20px;
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            /* Subtle pattern */
+            background-blend-mode: soft-light;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .message.left {
+            justify-content: flex-start;
+        }
+
+        .message.right {
+            justify-content: flex-end;
+        }
+
+        .msg-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .msg-content {
+            max-width: 70%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .msg-name {
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 4px;
+            margin-left: 5px;
+        }
+
+        .msg-bubble {
+            padding: 10px 14px;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+
+        .message.left .msg-bubble {
+            background: var(--chat-bubble-in);
+            border-top-left-radius: 2px;
+        }
+
+        .message.right .msg-bubble {
+            background: var(--chat-bubble-out);
+            border-top-right-radius: 2px;
+        }
+
+        .inner-monologue {
+            font-size: 0.85em;
+            color: #666;
+            font-style: italic;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            margin-top: 8px;
+            padding-top: 6px;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--accent-color);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: transform 0.2s;
+            z-index: 100;
+            border: none;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+        }
+
+        /* Judges Grid (Mini) */
+        .judges-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .judge-mini-card {
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .judge-mini-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .judge-mini-avatar {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .judge-mini-info {
+            flex: 1;
+            text-align: left;
+            min-width: 0;
+        }
+
+        .judge-mini-name {
+            font-size: 0.85em;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .judge-mini-score {
+            font-weight: bold;
+            color: var(--accent-color);
+            font-size: 1.4em;
+            line-height: 1;
+        }
+
+        .judge-mini-comment {
+            font-size: 0.9em;
+            color: #333;
+            margin-top: 4px;
+            line-height: 1.5;
+            text-align: left;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Hidden container for screenshot generation */
+        #screenshotContainer {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            width: 400px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> 返回首页</a>
+            <h2>评审结果</h2>
+            <div style="width: 80px;"></div> <!-- Spacer -->
+        </div>
+
+        <!-- Viral Card Section -->
+        <div class="glass-card" style="padding: 0; background: transparent; border: none; box-shadow: none;">
+            <div class="viral-card" id="viralCard">
+                <div class="viral-header">
+                    <h3>AI 毒舌秀 · 综合评分</h3>
+                    <div class="viral-score" id="overallScore">0.0</div>
+                    <div><span id="judgeCount">0</span> 位 AI 评委已阅</div>
+                </div>
+                <img id="resultImage" class="viral-image" src="" alt="Evaluated Image">
+                <div class="viral-content">
+                    <div class="viral-quote" id="mainQuote">"..."</div>
+                    <div class="judges-mini-grid" id="judgesMiniGrid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                <div class="viral-footer">
+                    <span><i class="fas fa-robot"></i> AI 毒舌秀</span>
+                    <span>扫码围观 <i class="fas fa-qrcode"></i></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Section -->
+        <div class="glass-card" style="padding: 0;">
+            <div class="chat-section">
+                <div class="chat-header">
+                    <div class="group-avatar" id="groupAvatar">
+                        <!-- Avatars -->
+                    </div>
+                    <div>
+                        <h3 style="margin: 0;">毒舌评委群 (5)</h3>
+                        <span style="font-size: 0.8em; color: #666;">ChatGPT, Gemini, Claude...</span>
+                    </div>
+                </div>
+                <div class="chat-body" id="chatBody">
+                    <!-- Messages -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="fab" onclick="downloadScreenshot()" title="保存分享图">
+        <i class="fas fa-share-alt"></i>
+    </button>
+
+    <script>
+        const AVATARS = {
+            'chatgpt5_judge': '/logos/ChatGPT-Logo.png',
+            'grok_judge': '/logos/Grok-Logo-Transparent.webp',
+            'gemini_judge': '/logos/Google-gemini-icon.svg.png',
+            'doubao_judge': '/logos/doubao-color.png',
+            'qwen_judge': '/logos/Qwen_logo.svg.png',
+            'default': '👾'
+        };
+
+        function getAvatar(id) {
+            const avatar = AVATARS[id] || AVATARS['default'];
+            if (avatar.startsWith('/logos/')) {
+                return `<img src="${avatar}" alt="${id}" style="width:100%;height:100%;object-fit:contain;background:transparent;" />`;
+            }
+            return avatar;
+        }
+
+
+        // Load Data
+        const rawData = localStorage.getItem('latest_judgment_result');
+        if (!rawData) {
+            alert('没有找到结果数据，返回首页...');
+            window.location.href = '/';
+        }
+        const data = JSON.parse(rawData);
+
+        // Render Page
+        function init() {
+            // 1. Viral Card
+            // Calculate overall score if not provided
+            let overallScore = data.overall_score;
+            if (!overallScore && data.sorted_results && data.sorted_results.length > 0) {
+                const validScores = data.sorted_results.filter(j => j.overall_score > 0).map(j => j.overall_score);
+                overallScore = validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : 0;
+            }
+            document.getElementById('overallScore').innerText = overallScore ? overallScore.toFixed(1) : 'N/A';
+            document.getElementById('judgeCount').innerText = data.sorted_results.length;
+
+            // Use the correct image URL from the API response
+            document.getElementById('resultImage').src = data.image_url || 'https://picsum.photos/800/600';
+
+            // Find a punchy quote (e.g., from the lowest scorer or a random one)
+            const randomJudge = data.sorted_results[Math.floor(Math.random() * data.sorted_results.length)];
+            document.getElementById('mainQuote').innerText = `"${randomJudge.one_liner || randomJudge.inner_monologue || '无语...'}"`;
+
+            // Mini Grid - Show one_liner and inner_monologue here
+            const miniGrid = document.getElementById('judgesMiniGrid');
+            data.sorted_results.forEach(j => {
+                // Use one_liner if available, fallback to inner_monologue
+                const comment = j.one_liner || j.inner_monologue || '...';
+                const avatarHtml = getAvatar(j.judge_id);
+                miniGrid.innerHTML += `
+                    <div class="judge-mini-card">
+                        <div class="judge-mini-header">
+                            <div class="judge-mini-avatar">${avatarHtml}</div>
+                            <div class="judge-mini-info">
+                                <div class="judge-mini-name">${j.judge_display_name}</div>
+                                <div class="judge-mini-score">${j.overall_score.toFixed(1)}</div>
+                            </div>
+                        </div>
+                        <div class="judge-mini-comment">"${comment}"</div>
+                    </div>
+                `;
+            });
+
+
+            // 2. Chat
+            const chatBody = document.getElementById('chatBody');
+            const groupAvatar = document.getElementById('groupAvatar');
+
+            // Setup Group Avatar (first 4 judges)
+            data.sorted_results.slice(0, 4).forEach(j => {
+                const div = document.createElement('div');
+                div.className = 'group-avatar-part';
+                div.style.backgroundColor = '#eee'; // Placeholder color
+                div.innerText = getAvatar(j.judge_id); // Simple text avatar for now
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                div.style.justifyContent = 'center';
+                div.style.fontSize = '12px';
+                groupAvatar.appendChild(div);
+            });
+
+            // Render Messages (Stage 2 - no inner_monologue here)
+            if (data.debate && data.debate.messages) {
+                data.debate.messages.forEach((msg, idx) => {
+                    const isMe = false; // All are "others" in this view, or could alternate
+                    const side = idx % 2 === 0 ? 'left' : 'left'; // Keep all left for group chat feel
+
+                    const judge = data.judge_results.find(j => j.judge_id === msg.speaker);
+                    const name = judge ? judge.judge_display_name : msg.speaker;
+
+                    const html = `
+                        <div class="message ${side}" style="animation-delay: ${idx * 0.1}s">
+                            <div class="msg-avatar">${getAvatar(msg.speaker)}</div>
+                            <div class="msg-content">
+                                <span class="msg-name">${name}</span>
+                                <div class="msg-bubble">
+                                    ${msg.content}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    chatBody.innerHTML += html;
+                });
+            } else {
+                chatBody.innerHTML = '<div style="text-align:center; color:#999; padding: 20px;">无讨论记录</div>';
+            }
+        }
+
+        // Screenshot Function
+        function downloadScreenshot() {
+            const element = document.getElementById('viralCard');
+            const btn = document.querySelector('.fab');
+
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            html2canvas(element, {
+                useCORS: true, // Important for external images
+                scale: 2, // High res
+                backgroundColor: null
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `ai-judge-result-${Date.now()}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => btn.innerHTML = '<i class="fas fa-share-alt"></i>', 2000);
+            }).catch(err => {
+                console.error(err);
+                alert('生成图片失败，请检查图片跨域问题');
+                btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+            });
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
