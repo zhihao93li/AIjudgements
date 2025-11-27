@@ -25,7 +25,6 @@ from app.db.crud import (
 )
 from app.judges import score_image_with_all_judges, run_debate_for_entry
 from app.judges.prompts import COMMON_SCORING_GUIDE, JUDGE_PERSONAS, DEBATE_MODE_INSTRUCTION
-from app.judges.config_manager import config_manager
 
 router = APIRouter()
 
@@ -204,9 +203,7 @@ async def judge_entry(
             judge_id=r["judge_id"],
             judge_display_name=r["judge_display_name"],
             overall_score=r["overall_score"],
-            dimension_scores=[
-                DimensionScore(**ds) for ds in r.get("dimension_scores", [])
-            ] if r.get("dimension_scores") else None,
+            dimension_scores=None,  # Not using dimension scores
             strengths=r.get("strengths"),
             weaknesses=r.get("weaknesses"),
             one_liner=r.get("one_liner"),
@@ -220,9 +217,7 @@ async def judge_entry(
             judge_id=r["judge_id"],
             judge_display_name=r["judge_display_name"],
             overall_score=r["overall_score"],
-            dimension_scores=[
-                DimensionScore(**ds) for ds in r.get("dimension_scores", [])
-            ] if r.get("dimension_scores") else None,
+            dimension_scores=None,  # Not using dimension scores
             strengths=r.get("strengths"),
             weaknesses=r.get("weaknesses"),
             one_liner=r.get("one_liner"),
@@ -490,37 +485,3 @@ async def get_debug_info(
     except Exception as e:
         logger.error(f"获取调试信息失败: {e}")
         raise HTTPException(status_code=500, detail=f"获取调试信息失败: {str(e)}")
-
-
-# ============ 配置管理 API ============
-
-@router.get("/config/judges")
-async def get_judge_config():
-    """获取当前评委配置"""
-    from app.judges.config_manager import config_manager
-    return config_manager.get_personas()
-
-
-@router.post("/config/judges")
-async def save_judge_config(config: dict):
-    """保存评委配置"""
-    from app.judges.config_manager import config_manager
-    try:
-        config_manager.save_config(config)
-        return {"status": "success", "message": "配置已保存"}
-    except Exception as e:
-        logger.error(f"保存配置失败: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/config/judges/reset")
-async def reset_judge_config():
-    """重置评委配置为默认值"""
-    from app.judges.config_manager import config_manager
-    try:
-        config_manager.reset_config()
-        return {"status": "success", "message": "配置已重置", "config": config_manager.get_personas()}
-    except Exception as e:
-        logger.error(f"重置配置失败: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-

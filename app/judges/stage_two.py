@@ -41,12 +41,7 @@ def build_debate_judges(
     
     # 使用自定义或默认的配置
     scoring_guide = custom_scoring_guide or COMMON_SCORING_GUIDE
-    
-    # 获取当前配置的人设
-    from app.judges.config_manager import config_manager
-    current_personas = config_manager.get_personas()
-    
-    personas = custom_personas or current_personas
+    personas = custom_personas or JUDGE_PERSONAS
     debate_instruction = custom_debate_instruction or DEBATE_MODE_INSTRUCTION
     
     for judge_id, persona_info in personas.items():
@@ -100,19 +95,14 @@ def build_selector_prompt(judges: list[AssistantAgent]) -> str:
         完整的选择器 prompt
     """
     # 构建评委角色说明
-    # 构建评委角色说明
     roles_list = []
     
-    # 获取当前配置的人设
-    from app.judges.config_manager import config_manager
-    current_personas = config_manager.get_personas()
-    
     for judge in judges:
-        if judge.name not in current_personas:
+        if judge.name not in JUDGE_PERSONAS:
             continue
             
-        persona_text = current_personas[judge.name]['persona']
-        display_name = current_personas[judge.name]['display_name']
+        persona_text = JUDGE_PERSONAS[judge.name]['persona']
+        display_name = JUDGE_PERSONAS[judge.name]['display_name']
         
         # 尝试提取核心性格
         try:

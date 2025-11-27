@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +17,11 @@
             --code-color: #d4d4d4;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -30,12 +35,23 @@
         }
 
         @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
-        .container { max-width: 1200px; margin: 0 auto; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
         /* Header */
         .header {
@@ -44,23 +60,33 @@
             justify-content: space-between;
             margin-bottom: 30px;
             padding: 20px;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border-radius: 16px;
             border: var(--glass-border);
         }
 
-        .header h1 { color: white; font-size: 1.8em; display: flex; align-items: center; gap: 10px; }
+        .header h1 {
+            color: white;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .back-btn {
             color: white;
             text-decoration: none;
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             padding: 8px 16px;
             border-radius: 20px;
             transition: background 0.3s;
             font-weight: 600;
         }
-        .back-btn:hover { background: rgba(255,255,255,0.3); }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
 
         /* Glass Card */
         .glass-card {
@@ -81,8 +107,20 @@
             margin-bottom: 20px;
         }
 
-        .info-item label { font-size: 0.85em; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
-        .info-item div { font-size: 1.1em; font-weight: 500; color: #2d3748; word-break: break-all; }
+        .info-item label {
+            font-size: 0.85em;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .info-item div {
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #2d3748;
+            word-break: break-all;
+        }
 
         .preview-img {
             width: 100%;
@@ -97,7 +135,7 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
-            background: rgba(0,0,0,0.05);
+            background: rgba(0, 0, 0, 0.05);
             padding: 5px;
             border-radius: 12px;
             width: fit-content;
@@ -117,13 +155,29 @@
         .tab-btn.active {
             background: white;
             color: var(--accent-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
-        .tab-content { display: none; animation: fadeIn 0.3s ease; }
-        .tab-content.active { display: block; }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
         /* Debug Cards */
         .debug-card {
@@ -132,7 +186,7 @@
             padding: 20px;
             margin-bottom: 20px;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
         }
 
         .debug-header {
@@ -152,7 +206,7 @@
             font-size: 1.1em;
             color: #2d3748;
         }
-        
+
         .model-badge {
             background: #ebf8ff;
             color: #3182ce;
@@ -189,9 +243,17 @@
             transition: background 0.2s;
         }
 
-        .toggle-btn:hover { background: #edf2f7; }
-        .toggle-btn i { transition: transform 0.3s; }
-        .toggle-btn.active i { transform: rotate(180deg); }
+        .toggle-btn:hover {
+            background: #edf2f7;
+        }
+
+        .toggle-btn i {
+            transition: transform 0.3s;
+        }
+
+        .toggle-btn.active i {
+            transform: rotate(180deg);
+        }
 
         .collapsible {
             display: none;
@@ -201,7 +263,10 @@
             border: 1px solid #edf2f7;
             border-top: none;
         }
-        .collapsible.active { display: block; }
+
+        .collapsible.active {
+            display: block;
+        }
 
         /* Code Blocks */
         .code-box {
@@ -221,7 +286,7 @@
             position: absolute;
             top: 8px;
             right: 8px;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             color: white;
             border: none;
             border-radius: 4px;
@@ -229,7 +294,10 @@
             font-size: 0.75em;
             cursor: pointer;
         }
-        .copy-btn:hover { background: rgba(255,255,255,0.2); }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
 
         .label-tag {
             display: inline-block;
@@ -253,7 +321,7 @@
             gap: 10px;
             margin-bottom: 5px;
         }
-        
+
         .chat-seq {
             background: var(--accent-color);
             color: white;
@@ -262,19 +330,33 @@
             border-radius: 4px;
         }
 
-        .chat-speaker { font-weight: 700; color: #2d3748; }
-        .chat-text { color: #4a5568; margin-bottom: 8px; }
+        .chat-speaker {
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .chat-text {
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
 
         /* Utility */
-        .loading, .error, .no-data {
+        .loading,
+        .error,
+        .no-data {
             text-align: center;
             padding: 40px;
             color: #718096;
         }
-        .error { color: #e53e3e; background: #fff5f5; border-radius: 8px; }
 
+        .error {
+            color: #e53e3e;
+            background: #fff5f5;
+            border-radius: 8px;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -292,13 +374,20 @@
                 <div style="display:flex; gap:30px; flex-wrap:wrap;">
                     <div style="flex:1; min-width:300px;">
                         <div class="info-grid">
-                            <div class="info-item"><label>ID</label><div id="entryId">-</div></div>
-                            <div class="info-item"><label>Type</label><div id="competitionType">-</div></div>
-                            <div class="info-item"><label>Date</label><div id="createdAt">-</div></div>
+                            <div class="info-item"><label>ID</label>
+                                <div id="entryId">-</div>
+                            </div>
+                            <div class="info-item"><label>Type</label>
+                                <div id="competitionType">-</div>
+                            </div>
+                            <div class="info-item"><label>Date</label>
+                                <div id="createdAt">-</div>
+                            </div>
                         </div>
                         <div class="info-item">
                             <label>Extra Context</label>
-                            <div id="extraText" style="background:#f7fafc; padding:10px; border-radius:8px; margin-top:5px;">-</div>
+                            <div id="extraText"
+                                style="background:#f7fafc; padding:10px; border-radius:8px; margin-top:5px;">-</div>
                         </div>
                     </div>
                     <div style="flex:0 0 200px;">
@@ -309,8 +398,10 @@
 
             <div class="glass-card">
                 <div class="tabs">
-                    <button class="tab-btn active" onclick="switchTab('stage1')"><i class="fas fa-star-half-alt"></i> 阶段一：独立评分</button>
-                    <button class="tab-btn" onclick="switchTab('stage2')"><i class="fas fa-comments"></i> 阶段二：群聊讨论</button>
+                    <button class="tab-btn active" onclick="switchTab('stage1')"><i class="fas fa-star-half-alt"></i>
+                        阶段一：独立评分</button>
+                    <button class="tab-btn" onclick="switchTab('stage2')"><i class="fas fa-comments"></i>
+                        阶段二：群聊讨论</button>
                 </div>
 
                 <div id="stage1Tab" class="tab-content active">
@@ -404,7 +495,7 @@
                 s2Container.innerHTML = data.stage_two.debate_sessions.map((s, i) => `
                     <div class="debug-card">
                         <div class="debug-header">
-                            <div class="judge-tag">会话 #${i+1} (${s.participants.length}人)</div>
+                            <div class="judge-tag">会话 #${i + 1} (${s.participants.length}人)</div>
                         </div>
 
                         <button class="toggle-btn" onclick="toggle(this)">
@@ -484,4 +575,5 @@
         }
     </script>
 </body>
+
 </html>

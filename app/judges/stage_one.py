@@ -36,11 +36,8 @@ def build_vision_judges(
     # 使用自定义或默认的评分规范
     scoring_guide = custom_scoring_guide or COMMON_SCORING_GUIDE
     
-    # 获取当前配置的人设
-    from app.judges.config_manager import config_manager
-    current_personas = config_manager.get_personas()
-    
-    personas = custom_personas or current_personas
+    # 使用自定义或默认的评委人设
+    personas = custom_personas or JUDGE_PERSONAS
     
     for judge_id, persona_info in personas.items():
         model_name = get_model_for_judge(judge_id)
@@ -212,11 +209,8 @@ async def score_image_with_all_judges(
     judge_outputs = []
     
     for judge, result in zip(judges, results):
-        # 获取当前配置的人设
-        from app.judges.config_manager import config_manager
-        current_personas = config_manager.get_personas()
-        
-        judge_display_name = current_personas.get(judge.name, {}).get("display_name", judge.name)
+        # 获取评委显示名称
+        judge_display_name = JUDGE_PERSONAS.get(judge.name, {}).get("display_name", judge.name)
         
         # 处理异常
         if isinstance(result, Exception):
