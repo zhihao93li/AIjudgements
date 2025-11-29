@@ -64,11 +64,11 @@ def get_model_for_judge(judge_id: str) -> str:
         模型名称
     """
     model_mapping = {
-        "chatgpt5_judge": settings.model_chatgpt5,
-        "grok_judge": settings.model_grok,
-        "gemini_judge": settings.model_gemini,
-        "doubao_judge": settings.model_doubao,
-        "qwen_judge": settings.model_qwen,
+        "ChatGPT": settings.model_chatgpt5,
+        "Grok": settings.model_grok,
+        "Gemini": settings.model_gemini,
+        "Doubao": settings.model_doubao,
+        "Qwen": settings.model_qwen,
     }
     
     return model_mapping.get(judge_id, settings.model_chatgpt5)

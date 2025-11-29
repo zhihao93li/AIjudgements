@@ -23,7 +23,8 @@ settings = get_settings()
 def build_debate_judges(
     custom_scoring_guide: Optional[str] = None,
     custom_personas: Optional[dict] = None,
-    custom_debate_instruction: Optional[str] = None
+    custom_debate_instruction: Optional[str] = None,
+    judge_results: Optional[list[dict]] = None,
 ) -> tuple[list[AssistantAgent], dict]:
     """
     构建所有评委 Agent（阶段二：讨论模式）
@@ -32,6 +33,7 @@ def build_debate_judges(
         custom_scoring_guide: 自定义评分规范
         custom_personas: 自定义评委人设
         custom_debate_instruction: 自定义讨论模式说明
+        judge_results: 阶段一的评委评分结果（用于注入自我认知）
     
     Returns:
         (评委 Agent 列表, 调试上下文字典)
@@ -44,15 +46,41 @@ def build_debate_judges(
     personas = custom_personas or JUDGE_PERSONAS
     debate_instruction = custom_debate_instruction or DEBATE_MODE_INSTRUCTION
     
+    # 建立 judge_id 到 result 的映射，方便快速查找
+    judge_result_map = {}
+    if judge_results:
+        for res in judge_results:
+            if "judge_id" in res:
+                judge_result_map[res["judge_id"]] = res
+    
     for judge_id, persona_info in personas.items():
         model_name = get_model_for_judge(judge_id)
         display_name = persona_info.get("display_name", judge_id)
         persona = persona_info.get("persona", "")
         
+        # 构建自我评价上下文
+        self_eval_context = ""
+        if judge_id in judge_result_map:
+            my_res = judge_result_map[judge_id]
+            my_score = my_res.get("overall_score", 0)
+            # 优先使用 inner_monologue，如果没有则用 one_liner
+            my_comment = my_res.get("inner_monologue") or my_res.get("one_liner", "（无评价）")
+            
+            self_eval_context = f"""
+            
+=== 背景：你的第一阶段评价 ===
+你在第一阶段给了 {my_score} 分，观点是："{my_comment}"
+
+这只是一个参考背景。在接下来的讨论中，你应该：
+- 优先回应其他评委最新的发言
+- 可以维护你的观点，也可以根据讨论调整立场
+- 避免重复已经说过的内容
+
+注意：在【评分摘要】中你会看到所有评委的观点，其中标记为 {display_name} 的就是你刚才的发言。
+"""
         
-        # 讨论模式的 system message：只需要人设 + 讨论模式说明
-        # 不要包含 scoring_guide，因为那是为阶段一评分设计的（包含 inner_monologue 和 JSON 输出指令）
-        system_message = persona + debate_instruction
+        # 讨论模式的 system message：人设 + 讨论模式说明 + 自我评价上下文
+        system_message = persona + debate_instruction + self_eval_context
         
         # 保存调试上下文
         debug_contexts[judge_id] = {
@@ -62,6 +90,7 @@ def build_debate_judges(
             "system_message": system_message,
             "persona": persona,
             "debate_instruction": debate_instruction,
+            "self_eval_context": self_eval_context,
         }
         
         try:
@@ -175,7 +204,8 @@ async def run_debate_for_entry(
     judges, debug_contexts = build_debate_judges(
         custom_scoring_guide=custom_scoring_guide,
         custom_personas=custom_personas,
-        custom_debate_instruction=custom_debate_instruction
+        custom_debate_instruction=custom_debate_instruction,
+        judge_results=judge_results,  # 传递评分结果以注入自我认知
     )
     
     if not judges:
