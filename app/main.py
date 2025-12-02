@@ -11,6 +11,7 @@ from loguru import logger
 from app.config import get_settings
 from app.db.database import init_database
 from app.api.routes import router
+from app.api.binary_choice_routes import router as binary_choice_router
 from app.logger import setup_logger
 
 settings = get_settings()
@@ -62,6 +63,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(router, prefix="/api", tags=["评委系统"])
+app.include_router(binary_choice_router, prefix="/api/binary_choice", tags=["二选一模式"])
 
 # 挂载前端静态文件
 frontend_path = Path(__file__).parent.parent / "frontend"
@@ -121,6 +123,30 @@ if frontend_path.exists():
         if results_file.exists():
             return FileResponse(str(results_file))
         return {"error": "结果页面不存在"}
+
+    @app.get("/binary_choice.html")
+    async def binary_choice_page():
+        """二选一输入页面"""
+        page_file = frontend_path / "binary_choice.html"
+        if page_file.exists():
+            return FileResponse(str(page_file))
+        return {"error": "页面不存在"}
+
+    @app.get("/binary_choice_results.html")
+    async def binary_choice_results_page():
+        """二选一结果页面"""
+        page_file = frontend_path / "binary_choice_results.html"
+        if page_file.exists():
+            return FileResponse(str(page_file))
+        return {"error": "页面不存在"}
+
+    @app.get("/binary_choice_debug.html")
+    async def binary_choice_debug_page():
+        """二选一调试页面"""
+        page_file = frontend_path / "binary_choice_debug.html"
+        if page_file.exists():
+            return FileResponse(str(page_file))
+        return {"error": "页面不存在"}
 else:
     @app.get("/")
     async def root():

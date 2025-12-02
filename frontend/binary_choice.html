@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 毒舌秀 - AI 陪审团</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.3);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --accent-color: #ff6b6b;
+            --text-color: #2d3748;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fad0c4, #ffdde1);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            color: white;
+            padding: 40px 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 3.5em;
+            font-weight: 800;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .header-badges {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .badge-link {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9em;
+            backdrop-filter: blur(5px);
+            transition: background 0.3s;
+        }
+
+        .badge-link:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Cards (Glassmorphism) */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 24px;
+            border: var(--glass-border);
+            box-shadow: var(--shadow);
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        /* Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #4a5568;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        /* Image Preview */
+        .image-preview-box {
+            width: 100%;
+            height: 200px;
+            border: 2px dashed #cbd5e0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #f7fafc;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .image-preview-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .image-preview-placeholder {
+            color: #a0aec0;
+            text-align: center;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .btn-primary:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: #edf2f7;
+            color: #4a5568;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Loading State */
+        .loading-container {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .loading-container.active {
+            display: block;
+        }
+
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .loading-status {
+            font-size: 1.1em;
+            color: var(--accent-color);
+            font-weight: 600;
+            min-height: 24px;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            color: #e53e3e;
+            background: #fff5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            border: 1px solid #feb2b2;
+        }
+
+        .vs-badge {
+            display: inline-block;
+            background: var(--accent-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚖️ AI 毒舌秀 · AI 陪审团</h1>
+            <p>公堂对簿 · 激烈交锋 · 最终判决</p>
+            <div class="header-badges">
+                <a href="/" class="badge-link"><i class="fas fa-home"></i> 返回主页</a>
+                <a href="/docs" target="_blank" class="badge-link"><i class="fas fa-book"></i> API 文档</a>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <form id="binaryChoiceForm">
+
+                <!-- 问题设置 -->
+                <div class="form-group">
+                    <label><i class="fas fa-gavel"></i> 案件陈述</label>
+                    <input type="text" id="question" name="question" required placeholder="例如：男朋友有没有错？"
+                        value="男朋友有没有错？">
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label><i class="fas fa-check-circle"></i> 观点 A</label>
+                        <input type="text" id="optionA" name="optionA" required placeholder="例如：有错" value="有错">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-times-circle"></i> 观点 B</label>
+                        <input type="text" id="optionB" name="optionB" required placeholder="例如：没错" value="没错">
+                    </div>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid rgba(0,0,0,0.1); margin: 30px 0;">
+
+                <!-- 内容输入 -->
+                <div class="form-group">
+                    <label><i class="fas fa-file-alt"></i> 证据提交（图片或文本至少填一项）</label>
+
+                    <div class="tabs">
+                        <div class="tab-btn active" onclick="switchTab('image')"><i class="fas fa-image"></i> 图片模式</div>
+                        <div class="tab-btn" onclick="switchTab('text')"><i class="fas fa-align-left"></i> 文本模式</div>
+                        <div class="tab-btn" onclick="switchTab('mixed')"><i class="fas fa-layer-group"></i> 混合模式</div>
+                    </div>
+
+                    <!-- 图片输入 -->
+                    <div id="imageInputSection">
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <input type="text" id="imageUrl" name="imageUrl" placeholder="输入图片 URL 或点击上传"
+                                oninput="updateImagePreview(this.value)" style="flex: 1;">
+                            <button type="button" class="btn-secondary"
+                                onclick="document.getElementById('fileInput').click()">
+                                <i class="fas fa-upload"></i> 上传
+                            </button>
+                            <input type="file" id="fileInput" accept="image/*" style="display: none;"
+                                onchange="handleFileUpload(this)">
+                        </div>
+
+                        <div class="image-preview-box" id="imagePreviewBox" style="display: none;">
+                            <img id="previewImg" src="" alt="预览">
+                        </div>
+                    </div>
+
+                    <!-- 文本输入 -->
+                    <div id="textInputSection" style="display: none; margin-top: 15px;">
+                        <textarea id="textContent" rows="6" placeholder="描述具体场景、对话或背景信息..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-info-circle"></i> 补充说明（可选）</label>
+                    <input type="text" id="extraContext" placeholder="例如：这是情侣日常吵架场景">
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <button type="submit" class="btn-primary" id="submitBtn">
+                        ⚖️ 开始审判
+                    </button>
+                </div>
+            </form>
+
+            <div class="loading-container" id="loading">
+                <div class="loader"></div>
+                <div class="loading-status" id="loadingText">正在组建陪审团...</div>
+                <p style="color: #718096; font-size: 0.9em; margin-top: 10px;">陪审员们正在入座并准备审理...</p>
+            </div>
+
+            <div class="error" id="error" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/binary_choice';
+        let currentMode = 'image';
+
+        function switchTab(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const imgSection = document.getElementById('imageInputSection');
+            const textSection = document.getElementById('textInputSection');
+
+            if (mode === 'image') {
+                imgSection.style.display = 'block';
+                textSection.style.display = 'none';
+            } else if (mode === 'text') {
+                imgSection.style.display = 'none';
+                textSection.style.display = 'block';
+            } else {
+                imgSection.style.display = 'block';
+                textSection.style.display = 'block';
+            }
+        }
+
+        async function handleFileUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const btn = input.previousElementSibling;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                btn.disabled = true;
+
+                try {
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) throw new Error('Upload failed');
+
+                    const data = await response.json();
+                    document.getElementById('imageUrl').value = data.url;
+                    updateImagePreview(data.url);
+
+                } catch (error) {
+                    alert('图片上传失败');
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    input.value = '';
+                }
+            }
+        }
+
+        function updateImagePreview(url) {
+            const box = document.getElementById('imagePreviewBox');
+            const img = document.getElementById('previewImg');
+            if (url) {
+                box.style.display = 'flex';
+                img.src = url;
+            } else {
+                box.style.display = 'none';
+            }
+        }
+
+        // Loading Animation
+        let loadingInterval;
+        function startLoadingAnimation() {
+            const texts = [
+                "正在分析案情...",
+                "ChatGPT 正在查阅法条...",
+                "Grok 正在准备辩护...",
+                "Gemini 正在过度解读证据...",
+                "陪审员们正在激烈辩论...",
+                "正在统计最终判决..."
+            ];
+            let i = 0;
+            const el = document.getElementById('loadingText');
+            el.innerText = texts[0];
+            loadingInterval = setInterval(() => {
+                i = (i + 1) % texts.length;
+                el.innerText = texts[i];
+            }, 3000);
+        }
+
+        function stopLoadingAnimation() {
+            clearInterval(loadingInterval);
+        }
+
+        // Submit Handler
+        document.getElementById('binaryChoiceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const imageUrl = document.getElementById('imageUrl').value;
+            const textContent = document.getElementById('textContent').value;
+
+            if (!imageUrl && !textContent) {
+                alert('请至少提供图片或文本内容！');
+                return;
+            }
+
+            // UI Update
+            document.getElementById('binaryChoiceForm').style.display = 'none';
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('error').style.display = 'none';
+            startLoadingAnimation();
+
+            const payload = {
+                question: document.getElementById('question').value,
+                option_a: document.getElementById('optionA').value,
+                option_b: document.getElementById('optionB').value,
+                image_url: imageUrl || null,
+                text_content: textContent || null,
+                extra_context: document.getElementById('extraContext').value || null
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/judge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.detail || '请求失败');
+                }
+
+                const data = await response.json();
+
+                // Redirect to results page
+                window.location.href = `/binary_choice_results.html?entry_id=${data.entry_id}`;
+
+            } catch (err) {
+                document.getElementById('binaryChoiceForm').style.display = 'block';
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').innerText = `错误: ${err.message}`;
+                stopLoadingAnimation();
+            }
+        });
+    </script>
+</body>
+
+</html>

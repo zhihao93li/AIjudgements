@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 陪审团 - 最终判决预览</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700;900&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'jury-black': '#0B0B0C',
+                        'jury-gold': '#D4AF37',
+                        'jury-gold-light': '#F2D57E',
+                        'jury-gold-dim': '#8a7035',
+                        'guilty-red': '#8B0000',
+                        'not-guilty-green': '#105c38',
+                        'not-guilty-teal': '#1abc9c'
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif SC"', 'serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'gold-glow': '0 0 15px rgba(212, 175, 55, 0.3)',
+                        'card-depth': '0 20px 40px rgba(0,0,0,0.6)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0B0B0C;
+            background-image:
+                radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.15), transparent 70%),
+                linear-gradient(180deg, #0B0B0C 0%, #1a1a1c 100%);
+            color: #F5F5F5;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 动画类 */
+        .fade-enter {
+            opacity: 0;
+            transform: scale(0.98);
+        }
+
+        .fade-enter-active {
+            opacity: 1;
+            transform: scale(1);
+            transition: opacity 0.5s, transform 0.5s;
+        }
+
+        .fade-exit {
+            opacity: 1;
+        }
+
+        .fade-exit-active {
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .hidden-page {
+            display: none;
+        }
+
+        /* 翻牌特效 */
+        .perspective-container {
+            perspective: 1000px;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+        }
+
+        .flip-card-front,
+        .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 0.75rem;
+        }
+
+        .flip-card-back {
+            background: #111;
+            border: 1px solid #8a7035;
+            background-image: repeating-linear-gradient(45deg, #111 0, #111 10px, #1a1a1a 10px, #1a1a1a 20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flip-card-front {
+            background: white;
+            color: black;
+            transform: rotateY(180deg);
+            border: 2px solid #D4AF37;
+        }
+
+        .flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        /* 呼吸动画 */
+        .breathe {
+            animation: breatheAnim 3s infinite ease-in-out;
+        }
+
+        @keyframes breatheAnim {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+        }
+
+        /* 粒子飞行轨迹动画 (JS动态插入) */
+        .flying-particle {
+            position: fixed;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #D4AF37;
+            z-index: 9999;
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0B0B0C;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D4AF37;
+        }
+
+        .input-dark {
+            background: #18181b;
+            border: 1px solid #333;
+            color: white;
+            transition: 0.3s;
+        }
+
+        .input-dark:focus {
+            border-color: #D4AF37;
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+            outline: none;
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased selection:bg-jury-gold selection:text-black">
+
+    <!-- 调试控制器 (Fixed Bottom Right) -->
+    <div
+        class="fixed bottom-4 right-4 z-50 bg-gray-900 border border-gray-700 p-2 rounded-lg shadow-2xl opacity-80 hover:opacity-100 transition">
+        <div class="text-xs text-gray-400 mb-1 font-mono">Dev Tools</div>
+        <div class="flex gap-2">
+            <button onclick="switchPage(1)"
+                class="px-3 py-1 bg-gray-800 hover:bg-jury-gold hover:text-black rounded text-xs text-white transition">1.
+                表单</button>
+            <button onclick="switchPage(2)"
+                class="px-3 py-1 bg-gray-800 hover:bg-jury-gold hover:text-black rounded text-xs text-white transition">2.
+                Loading</button>
+            <button onclick="switchPage(3)"
+                class="px-3 py-1 bg-gray-800 hover:bg-jury-gold hover:text-black rounded text-xs text-white transition font-bold border border-jury-gold">3.
+                判决结果</button>
+        </div>
+    </div>
+
+    <!-- 页面一：创建案件 -->
+    <main id="page-1" class="container mx-auto min-h-screen flex items-center justify-center p-4">
+        <div
+            class="bg-white text-gray-900 w-full max-w-3xl rounded-2xl shadow-card-depth border border-jury-gold relative overflow-hidden p-8 md:p-12">
+            <!-- 顶部装饰 -->
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-jury-black via-jury-gold to-jury-black">
+            </div>
+
+            <div class="text-center mb-8">
+                <h1 class="font-serif text-4xl md:text-5xl font-bold text-jury-gold mb-2 tracking-wider drop-shadow-sm">
+                    AI 陪审团</h1>
+                <p class="text-gray-500 font-medium tracking-widest uppercase text-sm">Create Your Case</p>
+            </div>
+
+            <div class="space-y-6">
+                <!-- 案情描述 -->
+                <div>
+                    <label class="block text-sm font-bold uppercase tracking-wider text-gray-400 mb-2">案情描述</label>
+                    <textarea
+                        class="w-full bg-gray-50 border border-gray-200 rounded-lg p-4 text-lg focus:border-jury-gold focus:ring-1 focus:ring-jury-gold outline-none transition resize-none"
+                        rows="3" placeholder="例如：我男朋友情人节送了我一个锦旗，这算不算有错？"></textarea>
+                </div>
+
+                <!-- 观点对立 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-guilty-red mb-2 flex items-center"><i
+                                class="fas fa-gavel mr-2"></i> 控方观点 (有错)</label>
+                        <input type="text"
+                            class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 focus:border-guilty-red focus:ring-1 focus:ring-guilty-red outline-none transition"
+                            placeholder="他确实有错，因为...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-not-guilty-green mb-2 flex items-center"><i
+                                class="fas fa-shield-alt mr-2"></i> 辩方观点 (没错)</label>
+                        <input type="text"
+                            class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 focus:border-not-guilty-green focus:ring-1 focus:ring-not-guilty-green outline-none transition"
+                            placeholder="他没有错，只是...">
+                    </div>
+                </div>
+
+                <!-- 证据区 -->
+                <div>
+                    <label class="block text-sm font-bold uppercase tracking-wider text-gray-400 mb-2">证据清单</label>
+                    <div
+                        class="bg-gray-50 rounded-lg p-4 border border-dashed border-gray-300 flex flex-wrap gap-3 items-center">
+                        <div
+                            class="px-4 py-2 bg-white border border-jury-gold/30 rounded shadow-sm text-sm text-gray-700 flex items-center">
+                            <i class="far fa-image mr-2 text-jury-gold"></i> 聊天记录_01.jpg
+                        </div>
+                        <div
+                            class="px-4 py-2 bg-white border border-jury-gold/30 rounded shadow-sm text-sm text-gray-700 flex items-center">
+                            <i class="far fa-file-alt mr-2 text-jury-gold"></i> 转账截图.png
+                        </div>
+                        <button
+                            class="px-4 py-2 bg-transparent border border-dashed border-gray-400 text-gray-500 rounded hover:border-jury-gold hover:text-jury-gold transition text-sm">
+                            <i class="fas fa-plus mr-1"></i> 上传证据
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 按钮 -->
+                <button onclick="startProcess()"
+                    class="w-full mt-4 bg-jury-black text-jury-gold font-serif text-xl py-4 rounded-lg border border-jury-gold shadow-lg hover:shadow-gold-glow hover:-translate-y-1 transition duration-300 flex items-center justify-center">
+                    <span class="mr-2">开始审判</span>
+                    <i class="fas fa-balance-scale"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页面二：Loading (陪审团点名) -->
+    <main id="page-2" class="container mx-auto min-h-screen flex flex-col items-center justify-center hidden-page p-4">
+
+        <!-- 天平图标 -->
+        <div class="mb-12 relative breathe">
+            <div class="absolute inset-0 bg-jury-gold blur-[60px] opacity-20 rounded-full"></div>
+            <svg class="w-32 h-32 text-jury-gold relative z-10" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8 8 8zm-5-9h10v2H7z" />
+                <path d="M12 5V3m0 16v-2" stroke="currentColor" stroke-width="2" />
+            </svg>
+        </div>
+
+        <h2 class="font-serif text-2xl text-jury-gold mb-12 tracking-widest animate-pulse">正在传唤 AI 陪审团...</h2>
+
+        <!-- 模型点名 -->
+        <div class="flex flex-wrap justify-center gap-6 md:gap-12 w-full max-w-4xl px-4">
+            <!-- 模型名称 (JS将控制 active 类) -->
+            <div class="jury-name text-gray-600 font-bold text-xl md:text-2xl transition-all duration-700" id="jury-0">
+                ChatGPT</div>
+            <div class="jury-name text-gray-600 font-bold text-xl md:text-2xl transition-all duration-700" id="jury-1">
+                Gemini</div>
+            <div class="jury-name text-gray-600 font-bold text-xl md:text-2xl transition-all duration-700" id="jury-2">
+                Grok</div>
+            <div class="jury-name text-gray-600 font-bold text-xl md:text-2xl transition-all duration-700" id="jury-3">
+                Claude</div>
+            <div class="jury-name text-gray-600 font-bold text-xl md:text-2xl transition-all duration-700" id="jury-4">
+                DeepSeek</div>
+        </div>
+    </main>
+
+    <!-- 页面三：判决结果页 (Verdict) -->
+    <main id="page-3" class="container mx-auto min-h-screen flex flex-col items-center pt-8 pb-20 hidden-page">
+
+        <!-- 1. Hero 区域 (比分与结果) -->
+        <div class="w-full max-w-5xl px-4 mb-8">
+            <div class="text-center mb-6">
+                <h1 id="verdict-title"
+                    class="font-serif text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 transition-all duration-1000">
+                    等待判决...
+                </h1>
+            </div>
+
+            <!-- 比分板 (Scoreboard) -->
+            <div class="flex justify-between items-stretch gap-4 md:gap-8 h-32 md:h-40 relative">
+
+                <!-- 左侧：有错阵营 (Guilty) -->
+                <div id="camp-guilty"
+                    class="flex-1 bg-gradient-to-r from-guilty-red/20 to-transparent border-l-4 border-guilty-red rounded-lg p-4 flex flex-col justify-between transition-all duration-500 relative">
+                    <div class="flex items-center text-guilty-red font-bold text-xl tracking-wider">
+                        <i class="fas fa-gavel mr-2"></i> 有错 GUILTY
+                    </div>
+                    <div class="flex items-end justify-between">
+                        <!-- 这里的头像容器 -->
+                        <div id="avatars-guilty" class="flex -space-x-3 overflow-hidden p-1"></div>
+                        <div id="score-guilty"
+                            class="text-5xl md:text-7xl font-serif font-bold text-white leading-none">0</div>
+                    </div>
+                    <!-- 高光背景 -->
+                    <div class="absolute inset-0 bg-guilty-red/5 opacity-0 hover:opacity-100 transition duration-300">
+                    </div>
+                </div>
+
+                <!-- VS -->
+                <div class="flex items-center justify-center w-12 md:w-20">
+                    <span class="font-serif text-3xl md:text-5xl text-jury-gold italic font-bold">VS</span>
+                </div>
+
+                <!-- 右侧：没错阵营 (Not Guilty) -->
+                <div id="camp-not-guilty"
+                    class="flex-1 bg-gradient-to-l from-not-guilty-teal/20 to-transparent border-r-4 border-not-guilty-teal rounded-lg p-4 flex flex-col justify-between items-end transition-all duration-500 relative">
+                    <div class="flex items-center text-not-guilty-teal font-bold text-xl tracking-wider">
+                        没错 NOT GUILTY <i class="fas fa-shield-alt ml-2"></i>
+                    </div>
+                    <div class="flex items-end justify-between w-full flex-row-reverse">
+                        <div id="avatars-not-guilty" class="flex -space-x-3 overflow-hidden p-1 flex-row-reverse"></div>
+                        <div id="score-not-guilty"
+                            class="text-5xl md:text-7xl font-serif font-bold text-white leading-none">0</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 2. 中部：案情回顾 (可折叠) -->
+        <div class="w-full max-w-3xl px-4 mb-10 z-10">
+            <div class="bg-white rounded-lg p-5 border border-jury-gold/50 shadow-lg cursor-pointer group transition-all"
+                onclick="toggleSummary()">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-jury-gold-dim font-bold text-sm tracking-widest uppercase">CASE SUMMARY</span>
+                    <i id="summary-icon"
+                        class="fas fa-chevron-down text-gray-400 group-hover:text-jury-gold transition"></i>
+                </div>
+                <p id="case-summary-text"
+                    class="text-gray-800 leading-relaxed line-clamp-2 transition-all duration-300 text-sm md:text-base">
+                    本案中，原告指控男友在结婚五周年纪念日送了一面写着“妙手回春”的锦旗，认为这不仅不浪漫，还带有嘲讽意味。被告（男友）辩称这是因为原告最近刚学会按摩，是为了表扬她的技术，属于幽默风趣的表达...
+                </p>
+            </div>
+        </div>
+
+        <!-- 3. 底部：卡牌展示区 (舞台) -->
+        <div class="w-full max-w-6xl px-4 grid grid-cols-2 md:grid-cols-5 gap-4" id="cards-container">
+            <!-- Cards injected via JS -->
+        </div>
+
+    </main>
+
+    <script>
+        // === 模拟数据 ===
+        const juryData = [
+            { name: "ChatGPT", role: "Logic Master", avatar: "C", vote: "guilty", reason: "锦旗属于特定社交语境物品，用于纪念日极不合时宜，缺乏情感价值。" },
+            { name: "Gemini", role: "Fact Checker", avatar: "G", vote: "not-guilty", reason: "这属于独特的幽默感，且确实回应了原告学习按摩的事实，并非敷衍。" },
+            { name: "Grok", role: "Rebel", avatar: "K", vote: "guilty", reason: "太直男了。这种幽默在纪念日就是灾难。判你有错是为你好。" },
+            { name: "Claude", role: "Empath", avatar: "A", vote: "guilty", reason: "原告的情感需求未被满足，礼物不仅没带来喜悦，反而造成困扰。" },
+            { name: "DeepSeek", role: "Analyst", avatar: "D", vote: "not-guilty", reason: "并没有法律规定纪念日必须送花。这是一种生活情趣的尝试，不应上纲上线。" }
+        ];
+
+        let scores = { guilty: 0, notGuilty: 0 };
+        let isSummaryExpanded = false;
+
+        // === 页面切换控制 ===
+        function switchPage(pageNum) {
+            document.querySelectorAll('main').forEach(el => el.classList.add('hidden-page'));
+            document.getElementById(`page-${pageNum}`).classList.remove('hidden-page');
+
+            if (pageNum === 2) startLoadingAnim();
+            if (pageNum === 3) initVerdict();
+        }
+
+        // === 流程逻辑 ===
+        function startProcess() {
+            switchPage(2);
+        }
+
+        function startLoadingAnim() {
+            const names = document.querySelectorAll('.jury-name');
+            names.forEach((el, idx) => {
+                el.classList.remove('text-jury-gold', 'scale-125', 'opacity-100'); // reset
+                setTimeout(() => {
+                    el.classList.remove('text-gray-600', 'opacity-40');
+                    el.classList.add('text-jury-gold', 'scale-110', 'opacity-100', 'drop-shadow-lg');
+                }, idx * 600);
+            });
+
+            setTimeout(() => switchPage(3), 3500);
+        }
+
+        // === 判决页逻辑 ===
+        function initVerdict() {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = ''; // Clear existing
+
+            // Reset scores UI
+            document.getElementById('score-guilty').innerText = '0';
+            document.getElementById('score-not-guilty').innerText = '0';
+            document.getElementById('avatars-guilty').innerHTML = '';
+            document.getElementById('avatars-not-guilty').innerHTML = '';
+            document.getElementById('verdict-title').innerText = "正在开票...";
+            document.getElementById('verdict-title').className = "font-serif text-4xl md:text-6xl font-bold text-gray-500 animate-pulse";
+
+            scores = { guilty: 0, notGuilty: 0 };
+
+            // Render Cards (Face Down)
+            juryData.forEach((juror, idx) => {
+                const card = document.createElement('div');
+                card.className = 'perspective-container h-64 w-full opacity-0 translate-y-8 transition-all duration-500';
+                card.style.animationDelay = `${idx * 100}ms`;
+                card.innerHTML = `
+                    <div class="flip-card-inner duration-700" id="card-inner-${idx}">
+                        <div class="flip-card-back shadow-card-depth flex flex-col items-center justify-center gap-2">
+                            <i class="fas fa-balance-scale text-4xl text-jury-gold/50"></i>
+                            <div class="font-serif text-jury-gold text-lg">JUROR ${idx + 1}</div>
+                        </div>
+                        <div class="flip-card-front shadow-xl p-4 flex flex-col items-center justify-between bg-white relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-1 ${juror.vote === 'guilty' ? 'bg-guilty-red' : 'bg-not-guilty-teal'}"></div>
+                            
+                            <div class="mt-2 w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-md z-10" 
+                                 style="background-color: ${juror.vote === 'guilty' ? '#8B0000' : '#1abc9c'}"
+                                 id="avatar-source-${idx}">
+                                ${juror.avatar}
+                            </div>
+                            
+                            <div class="text-center mt-2">
+                                <h3 class="font-bold text-gray-900">${juror.name}</h3>
+                                <div class="text-xs text-gray-400 uppercase tracking-wide">${juror.role}</div>
+                            </div>
+                            
+                            <div class="my-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${juror.vote === 'guilty' ? 'bg-red-100 text-guilty-red' : 'bg-teal-100 text-not-guilty-teal'}">
+                                ${juror.vote === 'guilty' ? '有错 GUILTY' : '没错 NOT GUILTY'}
+                            </div>
+                            
+                            <p class="text-xs text-gray-600 leading-snug line-clamp-3 italic">
+                                "${juror.reason}"
+                            </p>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+
+                // Appear animation
+                setTimeout(() => {
+                    card.classList.remove('opacity-0', 'translate-y-8');
+                }, idx * 100);
+            });
+
+            // Start Flip Sequence
+            runFlipSequence();
+        }
+
+        function runFlipSequence() {
+            juryData.forEach((juror, idx) => {
+                setTimeout(() => {
+                    // 1. Flip Card
+                    const cardInner = document.getElementById(`card-inner-${idx}`);
+                    cardInner.parentElement.classList.add('flipped'); // parent holds the hover/class logic if needed, but here we add to inner via class on wrapper? No, add class to wrapper usually or inner.
+                    // Correcting flip logic: style on inner
+                    cardInner.style.transform = "rotateY(180deg)";
+
+                    // 2. Wait for flip to be visible, then Fly Particle & Update Score
+                    setTimeout(() => {
+                        animateVote(idx, juror.vote, juror.avatar);
+                    }, 400);
+
+                }, 1000 + (idx * 1200)); // Delay start by 1s, then interval 1.2s
+            });
+
+            // Final Result Text
+            const totalDuration = 1000 + (juryData.length * 1200) + 500;
+            setTimeout(() => {
+                const finalGuilty = juryData.filter(j => j.vote === 'guilty').length;
+                const finalNotGuilty = juryData.length - finalGuilty;
+
+                const titleEl = document.getElementById('verdict-title');
+                titleEl.className = "font-serif text-4xl md:text-6xl font-bold bg-clip-text text-transparent transition-all duration-1000 scale-110 drop-shadow-2xl";
+
+                if (finalGuilty > finalNotGuilty) {
+                    titleEl.innerText = "最终判决：有错";
+                    titleEl.style.backgroundImage = "linear-gradient(to bottom, #ffcccc, #8B0000)";
+                    document.getElementById('camp-guilty').classList.add('ring-4', 'ring-guilty-red', 'ring-opacity-50', 'scale-105');
+                    document.getElementById('camp-not-guilty').classList.add('opacity-50', 'grayscale');
+                } else {
+                    titleEl.innerText = "最终判决：没错";
+                    titleEl.style.backgroundImage = "linear-gradient(to bottom, #ccffee, #105c38)";
+                    document.getElementById('camp-not-guilty').classList.add('ring-4', 'ring-not-guilty-teal', 'ring-opacity-50', 'scale-105');
+                    document.getElementById('camp-guilty').classList.add('opacity-50', 'grayscale');
+                }
+            }, totalDuration);
+        }
+
+        function animateVote(idx, vote, avatarChar) {
+            // Source coordinates
+            const sourceEl = document.getElementById(`avatar-source-${idx}`);
+            const rectSource = sourceEl.getBoundingClientRect();
+
+            // Target coordinates
+            const targetId = vote === 'guilty' ? 'score-guilty' : 'score-not-guilty';
+            const targetEl = document.getElementById(targetId);
+            const rectTarget = targetEl.getBoundingClientRect();
+
+            // Create flying particle
+            const particle = document.createElement('div');
+            particle.className = 'flying-particle shadow-gold-glow flex items-center justify-center text-[10px] font-bold text-white';
+            particle.innerText = avatarChar;
+            particle.style.left = `${rectSource.left}px`;
+            particle.style.top = `${rectSource.top}px`;
+            particle.style.backgroundColor = vote === 'guilty' ? '#8B0000' : '#1abc9c';
+
+            document.body.appendChild(particle);
+
+            // Trigger Move
+            requestAnimationFrame(() => {
+                particle.style.left = `${rectTarget.left + rectTarget.width / 2}px`;
+                particle.style.top = `${rectTarget.top + rectTarget.height / 2}px`;
+                particle.style.transform = 'scale(0.5)';
+            });
+
+            // On Finish
+            setTimeout(() => {
+                particle.remove();
+
+                // Update Score Number
+                if (vote === 'guilty') {
+                    scores.guilty++;
+                    document.getElementById('score-guilty').innerText = scores.guilty;
+                } else {
+                    scores.notGuilty++;
+                    document.getElementById('score-not-guilty').innerText = scores.notGuilty;
+                }
+
+                // Add Avatar to pile
+                const pileId = vote === 'guilty' ? 'avatars-guilty' : 'avatars-not-guilty';
+                const avatarEl = document.createElement('div');
+                avatarEl.className = `w-6 h-6 rounded-full border border-white flex items-center justify-center text-[10px] text-white font-bold animate-pulse`;
+                avatarEl.style.backgroundColor = vote === 'guilty' ? '#8B0000' : '#1abc9c';
+                avatarEl.innerText = avatarChar;
+                document.getElementById(pileId).appendChild(avatarEl);
+
+            }, 800); // Match CSS transition duration
+        }
+
+        function toggleSummary() {
+            const text = document.getElementById('case-summary-text');
+            const icon = document.getElementById('summary-icon');
+            isSummaryExpanded = !isSummaryExpanded;
+
+            if (isSummaryExpanded) {
+                text.classList.remove('line-clamp-2');
+                icon.classList.add('rotate-180');
+            } else {
+                text.classList.add('line-clamp-2');
+                icon.classList.remove('rotate-180');
+            }
+        }
+
+        // Init
+        // switchPage(1); // Default start
+    </script>
+</body>
+
+</html>
